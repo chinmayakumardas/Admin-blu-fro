@@ -1,2 +1,2 @@
-# Admin-blu-fro
-Admin-blu-fro  from ckd
+# blueprintfro-v1
+Admin dept   blueprint test frontend repo
