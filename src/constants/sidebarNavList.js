@@ -61,13 +61,13 @@ export const fullNav = [
     alias: "dashboard",
     roles: ["cpcGroup", "employeeGroup"],
   },
-  // {
-  //   title: "Inbox",
-  //   url: "/inbox",
-  //   icon: "Inbox",
-  //   alias: "inbox",
-  //   roles: ["cpcGroup", "employeeGroup"],
-  // },
+  {
+    title: "Inbox",
+    url: "/inbox",
+    icon: "Inbox",
+    alias: "inbox",
+    roles: ["cpcGroup", "employeeGroup"],
+  },
   // {
   //   title: "Planner",
   //   url: "/calendar",
@@ -107,9 +107,9 @@ export const fullNav = [
       
       // Employee
       { title: "Assigned Projects", path: "my-projects", alias: "workspace-projects-my", roles: ["employeeGroup"] },
-      { title: "My Team", path: "team/my-teams", alias: "workspace-teams-my", roles: ["employeeGroup"] },
-      { title: "My Tasks", path: "task/my-tasks", alias: "workspace-tasks-my", roles: ["employeeGroup"] },
-      { title: "Issue Tracker", path: "issues/my-issues", alias: "workspace-issues-all", roles: ["employeeGroup"] },
+      { title: "Assigned Tasks", path: "task/my-tasks", alias: "workspace-tasks-my", roles: ["employeeGroup"] },
+      { title: "Assigned Issues", path: "issues/my-issues", alias: "workspace-issues-all", roles: ["employeeGroup"] },
+      { title: "Worked Teams", path: "team/my-teams", alias: "workspace-teams-my", roles: ["employeeGroup"] },
       
     ]),
   },

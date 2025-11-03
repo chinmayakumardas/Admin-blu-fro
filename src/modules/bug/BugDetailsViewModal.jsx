@@ -88,7 +88,7 @@ const BugDetailsViewModal = ({ isOpen, onOpenChange, bugId }) => {
       if (result.error) {
         toast.error(`Failed to resolve bug: ${result.error.message}`);
       } else {
-        toast.success("Bug resolved successfully!");
+        toast.success("Issue resolved successfully!");
         onOpenChange(false);
       }
     });
@@ -121,7 +121,7 @@ const BugDetailsViewModal = ({ isOpen, onOpenChange, bugId }) => {
         <DialogHeader className="px-4 py-3 sm:px-6 sm:py-4 sticky top-0">
           <DialogTitle className="text-gray-800 text-lg font-bold flex items-center gap-2">
             <Bug className="h-5 w-5" />
-            Bug Details
+            Issue Details
           </DialogTitle>
         </DialogHeader>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 py-2 px-4 sm:px-6">
@@ -129,7 +129,7 @@ const BugDetailsViewModal = ({ isOpen, onOpenChange, bugId }) => {
           <div className="flex flex-col">
             <Label className="text-xs font-bold text-gray-800 mb-1 flex items-center gap-1">
               <FileText className="h-3 w-3" />
-              Bug ID
+              Issue ID
             </Label>
             <p className="text-xs text-black p-2">{bugDetails.bug_id}</p>
           </div>

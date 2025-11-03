@@ -572,7 +572,7 @@ const AllTaskListByProjectId = ({ projectId, project }) => {
                         hover:bg-gray-600 hover:bg-opacity-100
                         hover:shadow-md
                       "
-                      onClick={() => router.push(`/task/${task.task_id}`)}
+                      onClick={() => router.push(`/workspace/task/${task.task_id}`)}
                     >
                       <TableCell>{(currentPage - 1) * tasksPerPage + index + 1}</TableCell>
                       <TableCell>
@@ -665,7 +665,7 @@ const AllTaskListByProjectId = ({ projectId, project }) => {
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
-                                router.push(`/task/${task.task_id}`);
+                                router.push(`/workspace/task/${task.task_id}`);
                               }}
                               className="flex items-center gap-2 cursor-pointer focus:bg-blue-50 text-sm"
                             >
@@ -677,7 +677,7 @@ const AllTaskListByProjectId = ({ projectId, project }) => {
                                 <DropdownMenuItem
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    router.push(`/task/edit/${task.task_id}`);
+                                    router.push(`/workspace/task/edit/${task.task_id}`);
                                   }}
                                   className="flex items-center gap-2 cursor-pointer focus:bg-green-50 text-sm"
                                 >

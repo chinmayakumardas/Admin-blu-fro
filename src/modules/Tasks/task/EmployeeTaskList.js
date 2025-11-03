@@ -1,34 +1,33 @@
 
 
 
-
-
-
-
 'use client';
 
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   getAllTaskByEmployeeId,
-  getAllSubTaskByEmployeeId,
   selectAllTaskListByEmployeeId,
-  selectAllSubTaskListByEmployeeId,
 } from '@/features/taskSlice';
 import {
-  FiSearch,
-  FiFilter,
-  FiChevronDown,
-  FiArrowUp,
-  FiArrowDown,
-  FiEye,
-  FiClock,
-  FiAlertCircle,
-  FiCheckCircle,
-  FiX,
-  FiCalendar,
-} from 'react-icons/fi';
+  Bug as BugIcon,
+  Loader2,
+  Search,
+  ChevronDown,
+} from "lucide-react";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -36,76 +35,99 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/table";
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { toast } from 'sonner';
-import { Skeleton } from '@/components/ui/skeleton';
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/Pagination";
+import { FiX } from "react-icons/fi";
 import { formatDateUTC } from '@/utils/formatDate';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Status and priority styling
 const statusColors = {
-  Planned: 'bg-green-100 text-green-800 border-green-200',
-  'In Progress': 'bg-blue-100 text-blue-800 border-blue-200',
-  Completed: 'bg-gray-100 text-gray-800 border-gray-200',
-};
-
-const statusIcons = {
-  Planned: <FiClock className="inline-block mr-1" />,
-  'In Progress': <FiAlertCircle className="inline-block mr-1" />,
-  Completed: <FiCheckCircle className="inline-block mr-1" />,
+  Planned: 'bg-green-100 text-green-700 border-green-200',
+  'In Progress': 'bg-blue-100 text-blue-700 border-blue-200',
+  Completed: 'bg-gray-100 text-gray-700 border-gray-200',
 };
 
 const priorityColors = {
-  High: 'bg-red-100 text-red-800 border-red-200',
-  Medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  Low: 'bg-green-100 text-green-800 border-green-200',
+  High: 'bg-red-100 text-red-700 border-red-200',
+  Medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  Low: 'bg-green-100 text-green-700 border-green-200',
 };
 
-const AllTasksList = () => {
+// Status and priority filter options
+const statusFilterOptions = [
+  { value: "all", label: "All Status" },
+  { value: "Planned", label: "Planned" },
+  { value: "In Progress", label: "In Progress" },
+  { value: "Completed", label: "Completed" },
+];
+
+const priorityFilterOptions = [
+  { value: "all", label: "All Priorities" },
+  { value: "High", label: "High" },
+  { value: "Medium", label: "Medium" },
+  { value: "Low", label: "Low" },
+];
+
+// Sort options
+const sortOptions = [
+  { value: "id-asc", label: "ID (Low to High)" },
+  { value: "id-desc", label: "ID (High to Low)" },
+  { value: "title-asc", label: "Title (A-Z)" },
+  { value: "title-desc", label: "Title (Z-A)" },
+  { value: "projectName-asc", label: "Project (A-Z)" },
+  { value: "projectName-desc", label: "Project (Z-A)" },
+  { value: "status-asc", label: "Status (A-Z)" },
+  { value: "status-desc", label: "Status (Z-A)" },
+  { value: "priority-asc", label: "Priority (Low to High)" },
+  { value: "priority-desc", label: "Priority (High to Low)" },
+  { value: "deadline-desc", label: "Deadline (Newest First)" },
+  { value: "deadline-asc", label: "Deadline (Oldest First)" },
+];
+
+const EmployeeTasksList = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const employeeTasks = useSelector(selectAllTaskListByEmployeeId);
-  const employeeSubTasks = useSelector(selectAllSubTaskListByEmployeeId);
   const { loading: userLoading, employeeData } = useSelector((state) => state.user);
-  const { isLoading, error } = useSelector((state) => state.task);
+  const { isLoading } = useSelector((state) => state.task);
   const employeeId = employeeData?.employeeID;
 
-  const [activeTab, setActiveTab] = useState('tasks');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedPriority, setSelectedPriority] = useState('all');
-  const [sortField, setSortField] = useState(null);
-  const [sortDirection, setSortDirection] = useState('asc');
+  const [sortBy, setSortBy] = useState("title-asc");
   const [currentPage, setCurrentPage] = useState(1);
-  const [tasksPerPage, setTasksPerPage] = useState(8);
-  const [goToPage, setGoToPage] = useState('');
+  const [itemsPerPage] = useState(8);
 
   useEffect(() => {
     if (employeeId) {
       dispatch(getAllTaskByEmployeeId(employeeId));
-      dispatch(getAllSubTaskByEmployeeId(employeeId));
     }
   }, [dispatch, employeeId]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedStatus, selectedPriority, tasksPerPage, activeTab]);
+  }, [searchTerm, selectedStatus, selectedPriority]);
 
-  // Process tasks and subtasks
+  // Update currentPage if it exceeds totalPages
+  useEffect(() => {
+    const totalPages = Math.ceil((employeeTasks?.length || 0) / itemsPerPage);
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    } else if (totalPages === 0 && currentPage !== 1) {
+      setCurrentPage(1);
+    }
+  }, [employeeTasks, itemsPerPage, currentPage]);
+
+  // Process tasks
   const processedTasks = useMemo(() => {
     return employeeTasks.map((task) => ({
       ...task,
@@ -115,489 +137,406 @@ const AllTasksList = () => {
     }));
   }, [employeeTasks]);
 
-  const processedSubTasks = useMemo(() => {
-    return employeeSubTasks.map((sub) => ({
-      ...sub,
-      id: sub.sub_task_id,
-      _id: sub._id,
-      projectName: sub.projectName || 'N/A',
-    }));
-  }, [employeeSubTasks]);
-
   // Task statistics
   const taskStats = useMemo(() => ({
-    tasks: {
-      total: processedTasks.length,
-      planned: processedTasks.filter((item) => item.status === 'Planned').length,
-      inProgress: processedTasks.filter((item) => item.status === 'In Progress').length,
-      completed: processedTasks.filter((item) => item.status === 'Completed').length,
-      highPriority: processedTasks.filter((item) => item.priority === 'High').length,
-      mediumPriority: processedTasks.filter((item) => item.priority === 'Medium').length,
-      lowPriority: processedTasks.filter((item) => item.priority === 'Low').length,
-    },
-    subtasks: {
-      total: processedSubTasks.length,
-      planned: processedSubTasks.filter((item) => item.status === 'Planned').length,
-      inProgress: processedSubTasks.filter((item) => item.status === 'In Progress').length,
-      completed: processedSubTasks.filter((item) => item.status === 'Completed').length,
-      highPriority: processedSubTasks.filter((item) => item.priority === 'High').length,
-      mediumPriority: processedSubTasks.filter((item) => item.priority === 'Medium').length,
-      lowPriority: processedSubTasks.filter((item) => item.priority === 'Low').length,
-    },
-  }), [processedTasks, processedSubTasks]);
+    total: processedTasks.length,
+    planned: processedTasks.filter((item) => item.status === 'Planned').length,
+    inProgress: processedTasks.filter((item) => item.status === 'In Progress').length,
+    completed: processedTasks.filter((item) => item.status === 'Completed').length,
+    highPriority: processedTasks.filter((item) => item.priority === 'High').length,
+    mediumPriority: processedTasks.filter((item) => item.priority === 'Medium').length,
+    lowPriority: processedTasks.filter((item) => item.priority === 'Low').length,
+  }), [processedTasks]);
 
-  // Filtering
+  // Filter and sort tasks
+  const filteredAndSortedTasks = useMemo(() => {
+    let filtered = processedTasks;
 
-const filterItems = useCallback((items) => {
-  return items.filter((item) => {
-    let matches = true;
-    if (selectedStatus !== 'all') matches = matches && item.status === selectedStatus;
-    if (selectedPriority !== 'all') matches = matches && item.priority === selectedPriority;
+    if (selectedStatus !== 'all') {
+      filtered = filtered.filter((task) => task.status === selectedStatus);
+    }
+
+    if (selectedPriority !== 'all') {
+      filtered = filtered.filter((task) => task.priority === selectedPriority);
+    }
+
     if (searchTerm.trim() !== '') {
       const term = searchTerm.toLowerCase();
-      matches = matches && (
-        item.title?.toLowerCase().includes(term) ||
-        item.projectName?.toLowerCase().includes(term) ||
-        item.assignedBy?.toLowerCase().includes(term) ||
-        item.id?.toString().includes(term)
+      filtered = filtered.filter(
+        (task) =>
+          task.title?.toLowerCase().includes(term) ||
+          task.projectName?.toLowerCase().includes(term) ||
+          task.assignedBy?.toLowerCase().includes(term) ||
+          task.id?.toString().includes(term)
       );
     }
-    return matches;
-  });
-}, [selectedStatus, selectedPriority, searchTerm]);
- const filteredTasks = useMemo(() => filterItems(processedTasks), [filterItems, processedTasks]);
-const filteredSubTasks = useMemo(() => filterItems(processedSubTasks), [filterItems, processedSubTasks]);
 
+    // Priority order mapping for numeric sorting
+    const priorityOrder = { Low: 1, Medium: 2, High: 3 };
 
+    // Create a shallow copy of the filtered array before sorting
+    return [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case "id-asc":
+          return (a.id || 0) - (b.id || 0);
+        case "id-desc":
+          return (b.id || 0) - (a.id || 0);
+        case "title-asc":
+          return (a.title || "").localeCompare(b.title || "");
+        case "title-desc":
+          return (b.title || "").localeCompare(a.title || "");
+        case "projectName-asc":
+          return (a.projectName || "").localeCompare(b.projectName || "");
+        case "projectName-desc":
+          return (b.projectName || "").localeCompare(a.projectName || "");
+        case "status-asc":
+          return (a.status || "").localeCompare(b.status || "");
+        case "status-desc":
+          return (b.status || "").localeCompare(a.status || "");
+        case "priority-asc":
+          return (priorityOrder[a.priority] || 0) - (priorityOrder[b.priority] || 0);
+        case "priority-desc":
+          return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
+        case "deadline-desc":
+          return new Date(b.deadline) - new Date(a.deadline);
+        case "deadline-asc":
+          return new Date(a.deadline) - new Date(b.deadline);
+        default:
+          return 0;
+      }
+    });
+  }, [processedTasks, selectedStatus, selectedPriority, searchTerm, sortBy]);
 
-  // Sorting
-  
-const sortItems = useCallback((items) => {
-  if (!sortField) return items;
-  return [...items].sort((a, b) => {
-    let fieldA = a[sortField] || '';
-    let fieldB = b[sortField] || '';
-    if (sortField === 'deadline') {
-      fieldA = new Date(fieldA).getTime() || 0;
-      fieldB = new Date(fieldB).getTime() || 0;
-    }
-    return sortDirection === 'asc'
-      ? fieldA < fieldB ? -1 : fieldA > fieldB ? 1 : 0
-      : fieldA > fieldB ? -1 : fieldA < fieldB ? 1 : 0;
-  });
-}, [sortField, sortDirection]);
-const sortedTasks = useMemo(() => sortItems(filteredTasks), [sortItems, filteredTasks]);
-const sortedSubTasks = useMemo(() => sortItems(filteredSubTasks), [sortItems, filteredSubTasks]);
-  // Pagination
-  const items = activeTab === 'tasks' ? sortedTasks : sortedSubTasks;
-  const stats = activeTab === 'tasks' ? taskStats.tasks : taskStats.subtasks;
-  const totalPages = Math.ceil(items.length / tasksPerPage);
-  const indexOfLastItem = currentPage * tasksPerPage;
-  const indexOfFirstItem = indexOfLastItem - tasksPerPage;
-  const currentItems = items.slice(indexOfFirstItem, indexOfLastItem);
+  // Pagination logic
+  const totalPages = Math.ceil(filteredAndSortedTasks.length / itemsPerPage);
+  const paginatedTasks = filteredAndSortedTasks.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-  const handlePageChange = (pageNumber) => {
-    if (pageNumber >= 1 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber);
-    }
-  };
-
-  const handleGoToPage = () => {
-    const page = parseInt(goToPage, 10);
-    if (!isNaN(page) && page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-      setGoToPage('');
-    } else {
-      // toast.info(`Please enter a page number between 1 and ${totalPages}.`);
-    }
-  };
-
-  const handleSort = (field) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
-  const handleStatusFilter = (status) => {
-    setSelectedStatus(status);
-    setCurrentPage(1);
-  };
-
-  const handlePriorityFilter = (priority) => {
-    setSelectedPriority(priority);
-    setCurrentPage(1);
+  const handleRowClick = (task) => {
+    router.push(`/workspace/task/${task.task_id}`);
   };
 
   const clearFilters = () => {
     setSearchTerm('');
     setSelectedStatus('all');
     setSelectedPriority('all');
-    setSortField(null);
-    setSortDirection('asc');
-    setCurrentPage(1);
+    setSortBy("title-asc");
   };
 
-  const handleView = (item) => {
-    if (activeTab === 'tasks') {
-      router.push(`/task/${item.task_id}`);
-    } else {
-      router.push(`/task/${item.task_id || 'unknown'}/${item.subtask_id}`);
-    }
-  };
+  // Loading skeleton
+  const LoadingSkeleton = () => (
+    <div className="space-y-4">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="bg-gray-100 rounded-lg p-4 animate-pulse">
+          <div className="flex items-center justify-between">
+            <div className="flex-1 space-y-3">
+              <div className="h-5 bg-gray-300 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              <div className="flex items-center gap-4">
+                <div className="h-3 bg-gray-200 rounded w-20"></div>
+                <div className="h-3 bg-gray-200 rounded w-16"></div>
+              </div>
+            </div>
+            <div className="h-8 w-8 bg-gray-300 rounded"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
-  const tabs = [
-    { id: 'tasks', label: `Tasks (${taskStats.tasks.total})`, icon: '📋' },
-    { id: 'subtasks', label: `Subtasks (${taskStats.subtasks.total})`, icon: '📌' },
-  ];
+  // No results message
+  const NoResults = () => (
+    <div className="text-center py-12">
+      <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+        <BugIcon className="w-8 h-8 text-gray-400" />
+      </div>
+      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        No tasks found
+      </h3>
+      <p className="text-gray-600 mb-6">
+        {selectedStatus === 'all' && selectedPriority === 'all' && !searchTerm
+          ? "No tasks assigned."
+          : "No tasks match your current filters. Try adjusting your search or filter criteria."}
+      </p>
+      <Button
+        onClick={clearFilters}
+        variant="outline"
+        className="text-sm"
+      >
+        Clear All Filters
+      </Button>
+    </div>
+  );
 
   if (isLoading || userLoading) {
     return (
-      <div className="p-4 sm:p-6 space-y-4 bg-white rounded-lg shadow-md border border-gray-200">
-        {[...Array(5)].map((_, i) => (
-          <Skeleton key={i} className="h-12 w-full rounded-lg" />
-        ))}
+      <div className="w-full min-h-screen bg-white p-4 sm:p-8">
+        <Card className="mx-auto bg-white border border-gray-200 rounded-xl shadow-sm">
+          <CardHeader className="bg-gray-100 rounded-t-xl p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
+              <div className="animate-pulse">
+                <div className="h-6 bg-blue-400 rounded w-32 mb-2"></div>
+                <div className="h-4 bg-blue-300 rounded w-24"></div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6">
+            <LoadingSkeleton />
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  
-
-  const renderTable = () => (
-    <TooltipProvider>
-      <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
-        <Table className="min-w-full">
-          <TableHeader>
-            <TableRow className="">
-              <TableHead
-                className="font-medium text-gray-700 cursor-pointer hover:bg-gray-100 p-3 text-xs sm:text-sm"
-                onClick={() => handleSort('title')}
-              >
-                Title
-                {sortField === 'title' && (sortDirection === 'asc' ? <FiArrowUp className="inline ml-1" /> : <FiArrowDown className="inline ml-1" />)}
-              </TableHead>
-              <TableHead
-                className="font-medium text-gray-700 cursor-pointer hover:bg-gray-100 p-3 text-xs sm:text-sm"
-                onClick={() => handleSort('projectName')}
-              >
-                Project
-                {sortField === 'projectName' && (sortDirection === 'asc' ? <FiArrowUp className="inline ml-1" /> : <FiArrowDown className="inline ml-1" />)}
-              </TableHead>
-              <TableHead
-                className="font-medium text-gray-700 cursor-pointer hover:bg-gray-100 p-3 text-xs sm:text-sm"
-                onClick={() => handleSort('status')}
-              >
-                Status
-                {sortField === 'status' && (sortDirection === 'asc' ? <FiArrowUp className="inline ml-1" /> : <FiArrowDown className="inline ml-1" />)}
-              </TableHead>
-              <TableHead
-                className="font-medium text-gray-700 cursor-pointer hover:bg-gray-100 p-3 text-xs sm:text-sm"
-                onClick={() => handleSort('deadline')}
-              >
-                Deadline
-                {sortField === 'deadline' && (sortDirection === 'asc' ? <FiArrowUp className="inline ml-1" /> : <FiArrowDown className="inline ml-1" />)}
-              </TableHead>
-              <TableHead
-                className="font-medium text-gray-700 cursor-pointer hover:bg-gray-100 p-3 text-xs sm:text-sm"
-                onClick={() => handleSort('priority')}
-              >
-                Priority
-                {sortField === 'priority' && (sortDirection === 'asc' ? <FiArrowUp className="inline ml-1" /> : <FiArrowDown className="inline ml-1" />)}
-              </TableHead>
-              <TableHead className="font-medium text-gray-700 p-3 text-right text-xs sm:text-sm">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {currentItems.map((item) => (
-              <TableRow
-                key={item._id}
-                className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200"
-              >
-                <TableCell className="text-gray-900 p-3 text-xs sm:text-sm">
-                  <div className="truncate max-w-[150px] sm:max-w-[200px] md:max-w-none" title={item.title}>
-                    {item.title}
-                  </div>
-                </TableCell>
-                <TableCell className="text-gray-900 p-3 text-xs sm:text-sm">
-                  {item.projectName}
-                </TableCell>
-                <TableCell className="p-3">
-                  <Badge className={`${statusColors[item.status || 'Planned']} text-xs font-medium border px-2 py-1`}>
-                    {statusIcons[item.status || 'Planned'] || <FiClock className="inline-block mr-1" />}
-                    {item.status || 'Planned'}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-gray-900 p-3 text-xs sm:text-sm">
-                  {formatDateUTC(item.deadline) || 'No Deadline'}
-                </TableCell>
-                <TableCell className="p-3">
-                  <Badge className={`${priorityColors[item.priority || 'Medium']} text-xs font-medium border px-2 py-1`}>
-                    {item.priority || 'Medium'}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right p-3">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => handleView(item)}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200"
-                      >
-                        <FiEye className="h-4 w-4" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Click to view {activeTab === 'subtasks' ? 'subtask' : 'task'} details</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-      {totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 px-4 pb-4">
-          <div className="text-xs sm:text-sm text-gray-700">
-            Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, items.length)} of {items.length} items
-          </div>
-          <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-            <div className="flex items-center gap-2">
-              <Label className="text-xs sm:text-sm text-gray-700">Items per page:</Label>
-              <Select value={tasksPerPage.toString()} onValueChange={(value) => setTasksPerPage(Number(value))}>
-                <SelectTrigger className="w-16 h-8 text-xs sm:text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">5</SelectItem>
-                  <SelectItem value="8">8</SelectItem>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="20">20</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="h-8 px-3 text-xs sm:text-sm"
-              >
-                Previous
-              </Button>
-              <div className="flex gap-1">
-                {[...Array(Math.min(5, totalPages))].map((_, i) => {
-                  const page = currentPage <= 3 ? i + 1 : currentPage >= totalPages - 2 ? totalPages - 4 + i : currentPage - 2 + i;
-                  if (page < 1 || page > totalPages) return null;
-                  return (
-                    <Button
-                      key={page}
-                      variant={currentPage === page ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => handlePageChange(page)}
-                      className="w-8 h-8 p-0 text-xs sm:text-sm"
-                    >
-                      {page}
-                    </Button>
-                  );
-                })}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="h-8 px-3 text-xs sm:text-sm"
-              >
-                Next
-              </Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-xs sm:text-sm text-gray-700">Go to page:</Label>
-              <Input
-                type="number"
-                value={goToPage}
-                onChange={(e) => setGoToPage(e.target.value)}
-                className="w-16 h-8 text-xs sm:text-sm"
-                min="1"
-                max={totalPages}
-              />
-              <Button size="sm" onClick={handleGoToPage} className="h-8 px-3 text-xs sm:text-sm">
-                Go
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-    </TooltipProvider>
-  );
-
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="container mx-auto px-4 py-4 sm:py-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
-              My Tasks
-            </h1>
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="relative w-full sm:w-64">
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+    <div className="w-full bg-white">
+      <Card className="mx-auto bg-white border border-gray-200 rounded-xl shadow-sm">
+        <CardHeader className="bg-gray-200 rounded-t-xl p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
+            <h1 className="text-xl sm:text-2xl font-bold">My Tasks</h1>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+          {/* Search and Controls */}
+          <div className="flex flex-wrap gap-4">
+            {/* Search */}
+            <div className="flex-1 min-w-[180px]">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
-                  type="text"
+                  placeholder="Search tasks..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search by title, project, or ID..."
-                  className="pl-10 pr-10 h-9 text-xs sm:text-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  className="pl-10 text-sm w-full"
                 />
                 {searchTerm && (
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setSearchTerm('')}
+                    onClick={() => setSearchTerm("")}
                     className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
                     <FiX className="h-4 w-4" />
                   </Button>
                 )}
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="flex items-center gap-2 h-9 text-xs sm:text-sm border-gray-300 text-gray-700 hover:bg-gray-100"
-                  >
-                    <FiFilter />
-                    <span className="hidden sm:inline">Filters</span>
-                    <FiChevronDown />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 sm:w-72 text-xs sm:text-sm">
-                  <DropdownMenuLabel>Status</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => handleStatusFilter('all')}>
-                    <div className="flex justify-between w-full">
-                      <span>All Status</span>
-                      <Badge variant="secondary">{stats.total}</Badge>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleStatusFilter('Planned')}>
-                    <div className="flex justify-between w-full">
-                      <span>Planned</span>
-                      <Badge className="bg-green-100 text-green-800">{stats.planned}</Badge>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleStatusFilter('In Progress')}>
-                    <div className="flex justify-between w-full">
-                      <span>In Progress</span>
-                      <Badge className="bg-blue-100 text-blue-800">{stats.inProgress}</Badge>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleStatusFilter('Completed')}>
-                    <div className="flex justify-between w-full">
-                      <span>Completed</span>
-                      <Badge className="bg-gray-100 text-gray-800">{stats.completed}</Badge>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel>Priority</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => handlePriorityFilter('all')}>
-                    <div className="flex justify-between w-full">
-                      <span>All Priorities</span>
-                      <Badge variant="secondary">{stats.total}</Badge>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handlePriorityFilter('High')}>
-                    <div className="flex justify-between w-full">
-                      <span>High</span>
-                      <Badge className="bg-red-100 text-red-800">{stats.highPriority}</Badge>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handlePriorityFilter('Medium')}>
-                    <div className="flex justify-between w-full">
-                      <span>Medium</span>
-                      <Badge className="bg-yellow-100 text-yellow-800">{stats.mediumPriority}</Badge>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handlePriorityFilter('Low')}>
-                    <div className="flex justify-between w-full">
-                      <span>Low</span>
-                      <Badge className="bg-green-100 text-green-800">{stats.lowPriority}</Badge>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={clearFilters} className="text-center font-medium text-red-600">
-                    Clear Filters
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            </div>
+
+            {/* Status Filter */}
+            <div className="flex-1 min-w-[140px]">
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="text-sm w-full">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusFilterOptions.map((option) => (
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      className="text-sm"
+                    >
+                      <div className="flex justify-between w-full">
+                        <span>{option.label}</span>
+                        <Badge variant="secondary" className={`ml-2 ${statusColors[option.value] || "bg-gray-100 text-gray-700"}`}>
+                          {option.value === "all"
+                            ? taskStats.total
+                            : option.value === "Planned"
+                            ? taskStats.planned
+                            : option.value === "In Progress"
+                            ? taskStats.inProgress
+                            : taskStats.completed}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Priority Filter */}
+            <div className="flex-1 min-w-[140px]">
+              <Select value={selectedPriority} onValueChange={setSelectedPriority}>
+                <SelectTrigger className="text-sm w-full">
+                  <SelectValue placeholder="All Priorities" />
+                </SelectTrigger>
+                <SelectContent>
+                  {priorityFilterOptions.map((option) => (
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      className="text-sm"
+                    >
+                      <div className="flex justify-between w-full">
+                        <span>{option.label}</span>
+                        <Badge variant="secondary" className={`ml-2 ${priorityColors[option.value] || "bg-gray-100 text-gray-700"}`}>
+                          {option.value === "all"
+                            ? taskStats.total
+                            : option.value === "High"
+                            ? taskStats.highPriority
+                            : option.value === "Medium"
+                            ? taskStats.mediumPriority
+                            : taskStats.lowPriority}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sort */}
+            <div className="flex-1 min-w-[140px]">
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="text-sm w-full">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sortOptions.map((option) => (
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      className="text-sm"
+                    >
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Tabs and Content */}
-      <div className="container mx-auto px-4 py-4 sm:py-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-          <TabsList className="p-1  rounded-full flex flex-wrap justify-center sm:justify-start gap-2">
-            {tabs.map((tab) => (
-              <TabsTrigger
-                key={tab.id}
-                value={tab.id}
-                className="flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-medium rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200"
-              >
-                <span className="text-base">{tab.icon}</span>
-                <span className="inline">{tab.label}</span>
-                {/* <span className="hidden sm:inline">{tab.label}</span> */}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          <TabsContent value="tasks" className="min-h-[calc(100vh-200px)]">
-            {sortedTasks.length === 0 ? (
-              <div className="flex items-center justify-center min-h-[400px] bg-white rounded-lg shadow-md border border-gray-200">
-                <div className="text-center p-8">
-                  <FiCalendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Tasks Found</h3>
-                  <p className="text-gray-500 max-w-md text-sm">
-                    {selectedStatus === 'all' && selectedPriority === 'all' && !searchTerm
-                      ? 'No tasks assigned.'
-                      : 'No tasks match your filters. Try adjusting your search or filter criteria.'}
-                  </p>
-                </div>
+          {/* Tasks Table */}
+          {isLoading && filteredAndSortedTasks.length > 0 ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-5 h-5 mr-2 animate-spin text-blue-600" />
+            </div>
+          ) : filteredAndSortedTasks.length === 0 ? (
+            <NoResults />
+          ) : (
+            <>
+              <div className="overflow-x-auto rounded-md border">
+                <Table className="w-full table-fixed">
+                  <TableHeader>
+                    <TableRow className="bg-gray-50 text-xs sm:text-sm">
+                      <TableHead className="font-bold text-gray-700 w-1/2">Title</TableHead>
+                      <TableHead className="font-bold text-gray-700 hidden md:table-cell w-1/5">Project</TableHead>
+                      <TableHead className="font-bold text-gray-700 w-[100px]">Status</TableHead>
+                      <TableHead className="font-bold text-gray-700 hidden lg:table-cell w-[120px]">Deadline</TableHead>
+                      <TableHead className="font-bold text-gray-700 hidden sm:table-cell w-[100px]">Priority</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedTasks.map((task) => (
+                      <TableRow 
+                        key={task._id} 
+                        className="text-xs sm:text-sm cursor-pointer hover:bg-gray-50" 
+                        onClick={() => handleRowClick(task)}
+                      >
+                        <TableCell className="font-medium text-gray-900 w-1/2 truncate overflow-hidden text-ellipsis whitespace-nowrap" title={task.title}>
+                          {task.title}
+                        </TableCell>
+                        <TableCell className="text-gray-600 hidden md:table-cell w-1/5">
+                          {task.projectName}
+                        </TableCell>
+                        <TableCell className="w-[100px]">
+                          <Badge className={`${statusColors[task.status]} text-xs capitalize`}>
+                            {task.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-gray-600 hidden lg:table-cell w-[120px]">
+                          {formatDateUTC(task.deadline) || 'No Deadline'}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell w-[100px]">
+                          <Badge className={`${priorityColors[task.priority]} text-xs`}>
+                            {task.priority}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-            ) : (
-              renderTable()
-            )}
-          </TabsContent>
-          <TabsContent value="subtasks" className="min-h-[calc(100vh-200px)]">
-            {sortedSubTasks.length === 0 ? (
-              <div className="flex items-center justify-center min-h-[400px] bg-white rounded-lg shadow-md border border-gray-200">
-                <div className="text-center p-8">
-                  <FiCalendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Subtasks Found</h3>
-                  <p className="text-gray-500 max-w-md text-sm">
-                    {selectedStatus === 'all' && selectedPriority === 'all' && !searchTerm
-                      ? 'No subtasks assigned.'
-                      : 'No subtasks match your filters. Try adjusting your search or filter criteria.'}
-                  </p>
+
+              {/* Pagination Section */}
+              <div className="flex flex-col sm:flex-row items-center justify-between px-2 py-4 gap-4 sm:gap-0">
+                <div className="text-xs sm:text-sm text-gray-700">
+                  Page {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                  {Math.min(currentPage * itemsPerPage, filteredAndSortedTasks.length)} of{" "}
+                  {filteredAndSortedTasks.length} Tasks
                 </div>
+                {totalPages > 1 && (
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage((prev) => Math.max(prev - 1, 1));
+                          }}
+                          className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                        />
+                      </PaginationItem>
+
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+
+                        if (pageNum > 0 && pageNum <= totalPages) {
+                          return (
+                            <PaginationItem key={pageNum}>
+                              <PaginationLink
+                                href="#"
+                                isActive={currentPage === pageNum}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setCurrentPage(pageNum);
+                                }}
+                              >
+                                {pageNum}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        }
+                        return null;
+                      })}
+
+                      {totalPages > 5 && currentPage < totalPages - 2 && (
+                        <PaginationItem>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      )}
+
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+                          }}
+                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
               </div>
-            ) : (
-              renderTable()
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
 
-export default AllTasksList;
-
-
-
-
-
-
+export default EmployeeTasksList;

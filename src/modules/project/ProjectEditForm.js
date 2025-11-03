@@ -817,737 +817,7 @@
 
 
 
-// components/ProjectEditForm.jsx
-// "use client";
 
-// import { useState, useRef, useEffect } from "react";
-// import { useRouter } from "next/navigation";
-// import { useDispatch, useSelector } from "react-redux";
-// import { validateInput, sanitizeInput } from "@/utils/sanitize";
-// import TeamLeadSelect from "@/modules/project/TeamLeadSelect";
-// import ClientSelect from "@/modules/project/ClientSelect";
-// import {
-//   FiCalendar,
-//   FiUser,
-//   FiFileText,
-//   FiUpload,
-//   FiX,
-//   FiEye,
-//   FiCheck,
-//   FiArrowLeft,
-// } from "react-icons/fi";
-// import {
-//   fetchProjectById,
-//   updateProject,
-//   fetchAllProjects,
-//   resetProjectCreation, // ONLY exported reset action
-// } from "@/features/projectSlice";
-// import { Button } from "@/components/ui/button";
-// import { Input } from "@/components/ui/input";
-// import { Textarea } from "@/components/ui/textarea";
-// import { Label } from "@/components/ui/label";
-// import {
-//   Select,
-//   SelectTrigger,
-//   SelectValue,
-//   SelectContent,
-//   SelectItem,
-// } from "@/components/ui/select";
-// import { Progress } from "@/components/ui/progress";
-// import { toast } from "sonner";
-
-// export default function ProjectEditForm({ projectId }) {
-//   const router = useRouter();
-//   const dispatch = useDispatch();
-//   const { project, status, error } = useSelector((state) => state.project);
-
-//   const formRef = useRef(null);
-//   const fileInputRef = useRef(null);
-//   const clientSelectRef = useRef(null);
-//   const teamLeadSelectRef = useRef(null);
-
-//   // ---------- FORM STATE ----------
-//   const [formData, setFormData] = useState({
-//     projectName: "",
-//     description: "",
-//     clientId: undefined,
-//     teamLeadId: "",
-//     teamLeadName: "",
-//     startDate: "",
-//     expectedEndDate: "",
-//     category: "",
-//     attachments: [],
-//   });
-
-//   const [formErrors, setFormErrors] = useState({
-//     projectName: "",
-//     description: "",
-//     clientId: "",
-//     teamLeadId: "",
-//     startDate: "",
-//     expectedEndDate: "",
-//     category: "",
-//   });
-
-//   const [fileErrors, setFileErrors] = useState([]);
-//   const [uploadProgress, setUploadProgress] = useState({});
-//   const [previewFile, setPreviewFile] = useState(null);
-
-//   const [isClientSelectOpen, setIsClientSelectOpen] = useState(false);
-//   const [isTeamLeadSelectOpen, setIsTeamLeadSelectOpen] = useState(false);
-//   const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
-//   const [isExpectedEndDatePickerOpen, setIsExpectedEndDatePickerOpen] = useState(false);
-//   const [dragActive, setDragActive] = useState(false);
-//   const [hasHandledSuccess, setHasHandledSuccess] = useState(false);
-//   const [initialized, setInitialized] = useState(false);
-
-//   // ---------- FETCH PROJECT ----------
-//   useEffect(() => {
-//     if (projectId && status.fetchProject === "idle") {
-//       dispatch(fetchProjectById(projectId));
-//     }
-//   }, [dispatch, projectId, status.fetchProject]);
-// console.log(project.data)
-//   // ---------- AUTO-FILL ----------
-//   useEffect(() => {
-//     if (project?.data && !initialized && status.fetchProject === "succeeded") {
-//       const p = project.data;
-//       setFormData({
-//         projectName: p.projectName ?? "",
-//         description: p.description ?? "",
-//         clientId: p.clientId ?? undefined,
-//         teamLeadId: p.teamLeadId ?? "",
-//         teamLeadName: p.teamLeadName ?? "",
-//         startDate: p.startDate ? p.startDate.split("T")[0] : "",
-//         expectedEndDate: p.expectedEndDate ? p.expectedEndDate.split("T")[0] : "",
-//         category: p.category ?? "",
-//         attachments: [],
-//       });
-//       setInitialized(true);
-//     }
-//   }, [project, status.fetchProject, initialized]);
-
-//   // ---------- SUCCESS / ERROR ----------
-//   useEffect(() => {
-//     // Success
-//     if (status.updateProject === "updated" && !hasHandledSuccess) {
-//       setHasHandledSuccess(true);
-//       toast.success("Project updated successfully!");
-//       dispatch(fetchAllProjects());
-//       router.push("/project/all");
-//       dispatch(resetProjectCreation());
-//     }
-//     // Error
-//     if (status.updateProject === "update_failed") {
-//       toast.error(error?.updateProject || "Failed to update project");
-//       dispatch(resetProjectCreation());
-//     }
-//   }, [status.updateProject, error, hasHandledSuccess, router, dispatch]);
-
-//   // ---------- CLICK OUTSIDE ----------
-//   useEffect(() => {
-//     const handler = (e) => {
-//       if (clientSelectRef.current && !clientSelectRef.current.contains(e.target)) setIsClientSelectOpen(false);
-//       if (teamLeadSelectRef.current && !teamLeadSelectRef.current.contains(e.target)) setIsTeamLeadSelectOpen(false);
-//       if (formRef.current && !formRef.current.contains(e.target)) {
-//         setIsStartDatePickerOpen(false);
-//         setIsExpectedEndDatePickerOpen(false);
-//       }
-//     };
-//     document.addEventListener("mousedown", handler);
-//     document.addEventListener("touchstart", handler);
-//     return () => {
-//       document.removeEventListener("mousedown", handler);
-//       document.removeEventListener("touchstart", handler);
-//     };
-//   }, []);
-
-//   // ---------- INPUT HANDLERS ----------
-//   const handleChange = (e) => {
-//     const { name, value } = e.target;
-//     const validation = validateInput(value);
-//     if (!validation.isValid) {
-//       setFormErrors((prev) => ({ ...prev, [name]: validation.warning }));
-//       return;
-//     }
-//     setFormErrors((prev) => ({ ...prev, [name]: "" }));
-//     const sanitized = sanitizeInput(value);
-//     const updated = { ...formData, [name]: sanitized };
-
-//     // Category → client reset
-//     if (name === "category" && sanitized === "in house") {
-//       updated.clientId = undefined;
-//       setFormErrors((prev) => ({ ...prev, clientId: "" }));
-//     }
-
-//     // Date validation
-//     if (name === "startDate" && updated.expectedEndDate) {
-//       if (new Date(sanitized) > new Date(updated.expectedEndDate)) {
-//         setFormErrors((prev) => ({ ...prev, startDate: "Start date cannot be after end date" }));
-//       } else {
-//         setFormErrors((prev) => ({ ...prev, startDate: "", expectedEndDate: "" }));
-//       }
-//     }
-//     if (name === "expectedEndDate" && updated.startDate) {
-//       if (new Date(updated.startDate) > new Date(sanitized)) {
-//         setFormErrors((prev) => ({ ...prev, expectedEndDate: "End date cannot be before start date" }));
-//       } else {
-//         setFormErrors((prev) => ({ ...prev, expectedEndDate: "", startDate: "" }));
-//       }
-//     }
-
-//     setFormData(updated);
-//   };
-
-//   const handleDateSelect = (name, date) => {
-//     const formatted = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-//     handleChange({ target: { name, value: formatted } });
-//     if (name === "startDate") setIsStartDatePickerOpen(false);
-//     if (name === "expectedEndDate") setIsExpectedEndDatePickerOpen(false);
-//   };
-
-//   // ---------- FILE HANDLERS ----------
-//   const handleDrag = (e) => {
-//     e.preventDefault();
-//     e.stopPropagation();
-//     setDragActive(e.type === "dragenter" || e.type === "dragover");
-//   };
-
-//   const handleDrop = (e) => {
-//     e.preventDefault();
-//     e.stopPropagation();
-//     setDragActive(false);
-//     if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files);
-//   };
-
-//   const handleFiles = (files) => {
-//     const newFiles = Array.from(files);
-//     const valid = [];
-//     const errs = [];
-
-//     const allowed = [
-//       "application/pdf",
-//       "application/msword",
-//       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-//       "application/vnd.ms-excel",
-//       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-//       "application/vnd.ms-powerpoint",
-//       "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-//     ];
-//     const max = 10 * 1024 * 1024;
-
-//     newFiles.forEach((f) => {
-//       if (!allowed.includes(f.type)) errs.push(`${f.name}: Only PDF/Word/Excel/PPT`);
-//       else if (f.size > max) errs.push(`${f.name}: Max 10 MB`);
-//       else {
-//         valid.push(f);
-//         setUploadProgress((p) => ({ ...p, [f.name]: 0 }));
-//         simulateUpload(f.name);
-//       }
-//     });
-
-//     if (errs.length) {
-//       setFileErrors(errs);
-//       toast.error("Some files rejected");
-//     }
-//     if (valid.length) {
-//       setFormData((prev) => ({ ...prev, attachments: [...prev.attachments, ...valid] }));
-//       toast.success(`${valid.length} file(s) added`);
-//     }
-//   };
-
-//   const simulateUpload = (name) => {
-//     let prog = 0;
-//     const iv = setInterval(() => {
-//       prog += 20;
-//       setUploadProgress((p) => ({ ...p, [name]: prog }));
-//       if (prog >= 100) {
-//         clearInterval(iv);
-//         setTimeout(() => setUploadProgress((p) => {
-//           const { [name]: _, ...rest } = p;
-//           return rest;
-//         }), 800);
-//       }
-//     }, 200);
-//   };
-
-//   const removeFile = (idx) => {
-//     const file = formData.attachments[idx];
-//     setFormData((prev) => ({ ...prev, attachments: prev.attachments.filter((_, i) => i !== idx) }));
-//     setUploadProgress((p) => {
-//       const { [file.name]: _, ...rest } = p;
-//       return rest;
-//     });
-//   };
-
-//   const viewFile = (file) => {
-//     const url = URL.createObjectURL(file);
-//     setPreviewFile({ url, name: file.name, type: file.type });
-//   };
-
-//   const closePreview = () => {
-//     if (previewFile?.url) URL.revokeObjectURL(previewFile.url);
-//     setPreviewFile(null);
-//   };
-
-//   // ---------- SUBMIT ----------
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     let hasErr = false;
-//     const errs = { ...formErrors };
-
-//     const required = ["projectName", "description", "teamLeadId", "startDate", "expectedEndDate", "category"];
-//     required.forEach((k) => {
-//       if (!formData[k]) {
-//         errs[k] = "Required";
-//         hasErr = true;
-//       }
-//     });
-//     if (formData.category === "client" && !formData.clientId) {
-//       errs.clientId = "Client required";
-//       hasErr = true;
-//     }
-//     if (hasErr) {
-//       setFormErrors(errs);
-//       toast.error("Please fill all required fields");
-//       return;
-//     }
-
-//     const fd = new FormData();
-//     fd.append("projectName", formData.projectName);
-//     fd.append("description", formData.description);
-//     if (formData.category === "client") fd.append("clientId", formData.clientId);
-//     fd.append("teamLeadId", formData.teamLeadId);
-//     fd.append("teamLeadName", formData.teamLeadName);
-//     fd.append("startDate", formData.startDate);
-//     fd.append("expectedEndDate", formData.expectedEndDate);
-//     fd.append("category", formData.category);
-//     formData.attachments.forEach((f) => fd.append("attachments", f));
-
-//     try {
-//       await dispatch(updateProject({ projectId, updatedData: fd })).unwrap();
-//     } catch {
-//       // handled in useEffect
-//     }
-//   };
-
-//   const getFileIcon = (type) => {
-//     if (type.includes("pdf")) return <FiFileText className="w-5 h-5 text-red-600" />;
-//     if (type.includes("word")) return <FiFileText className="w-5 h-5 text-blue-600" />;
-//     if (type.includes("excel")) return <FiFileText className="w-5 h-5 text-green-600" />;
-//     if (type.includes("powerpoint")) return <FiFileText className="w-5 h-5 text-orange-600" />;
-//     return <FiFileText className="w-5 h-5 text-gray-600" />;
-//   };
-
-//   const isFormValid = () => {
-//     const req = ["projectName", "description", "teamLeadId", "startDate", "expectedEndDate", "category"];
-//     const filled = req.every((k) => formData[k]);
-//     const clientOk = formData.category !== "client" || !!formData.clientId;
-//     return filled && clientOk && status.updateProject !== "updating";
-//   };
-
-//   // ---------- CALENDAR ----------
-//   const CalendarPicker = ({ value, onSelect, name }) => {
-//     const [year, setYear] = useState(new Date().getFullYear());
-//     const [month, setMonth] = useState(new Date().getMonth());
-
-//     const daysInMonth = new Date(year, month + 1, 0).getDate();
-//     const firstDay = new Date(year, month, 1).getDay();
-//     const selected = value ? new Date(value) : null;
-
-//     const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-//     return (
-//       <div className="absolute z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-4 mt-2 w-72">
-//         <div className="flex justify-between items-center mb-3">
-//           <Button
-//             variant="ghost"
-//             size="sm"
-//             onClick={() => {
-//               if (month === 0) {
-//                 setMonth(11);
-//                 setYear(year - 1);
-//               } else {
-//                 setMonth(month - 1);
-//               }
-//             }}
-//           >
-//             ‹
-//           </Button>
-//           <span className="font-medium text-sm">
-//             {new Date(year, month).toLocaleString("default", { month: "long", year: "numeric" })}
-//           </span>
-//           <Button
-//             variant="ghost"
-//             size="sm"
-//             onClick={() => {
-//               if (month === 11) {
-//                 setMonth(0);
-//                 setYear(year + 1);
-//               } else {
-//                 setMonth(month + 1);
-//               }
-//             }}
-//           >
-//             ›
-//           </Button>
-//         </div>
-//         <div className="grid grid-cols-7 gap-1 text-center text-xs">
-//           {weekdays.map((d) => (
-//             <div key={d} className="font-semibold text-gray-500 py-2">
-//               {d}
-//             </div>
-//           ))}
-//           {Array.from({ length: firstDay }).map((_, i) => (
-//             <div key={`empty-${i}`} />
-//           ))}
-//           {Array.from({ length: daysInMonth }).map((_, i) => {
-//             const day = i + 1;
-//             const date = new Date(year, month, day);
-//             const isSel = selected && selected.toDateString() === date.toDateString();
-//             const isToday = date.toDateString() === new Date().toDateString();
-//             return (
-//               <Button
-//                 key={day}
-//                 variant={isSel ? "default" : "ghost"}
-//                 className={`h-8 w-8 text-xs ${isSel ? "bg-blue-600 hover:bg-blue-700" : ""} ${isToday ? "ring-2 ring-blue-400" : ""}`}
-//                 onClick={() => onSelect(name, date)}
-//               >
-//                 {day}
-//               </Button>
-//             );
-//           })}
-//         </div>
-//       </div>
-//     );
-//   };
-
-//   // ---------- RENDER ----------
-//   if (status.fetchProject === "loading") {
-//     return (
-//       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-//         <div className="text-center">
-//           <div className="animate-spin rounded-full h-12 w-12 border-b-3 border-t-3 border-blue-600 mb-4" />
-//           <p className="text-gray-600 font-medium">Loading project…</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   if (status.fetchProject === "failed") {
-//     return (
-//       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-//         <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md w-full text-center">
-//           <h3 className="text-lg font-semibold text-red-700 mb-2">Unable to load project</h3>
-//           <p className="text-red-600 text-sm mb-4">{error?.fetchProject || "Unknown error"}</p>
-//           <Button onClick={() => dispatch(fetchProjectById(projectId))} variant="outline">
-//             <FiArrowLeft className="mr-2" /> Retry
-//           </Button>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <>
-//       <div ref={formRef} className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
-//         <div className="max-w-7xl mx-auto">
-//           {/* Header */}
-//           <div className="mb-8 text-center sm:text-left">
-//             <div className="flex items-center gap-4 mb-4">
-//               <Button variant="outline" onClick={() => router.back()} className="flex items-center gap-2">
-//                 <FiArrowLeft className="h-5 w-5" />
-//                 <span className="hidden sm:inline">Back</span>
-//               </Button>
-//             </div>
-//             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Edit Project</h1>
-//             <p className="mt-2 text-lg text-gray-600">Update details and documents</p>
-//           </div>
-
-//           <form onSubmit={handleSubmit} className="space-y-8">
-//             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-//               {/* LEFT – FIELDS */}
-//               <div className="space-y-6">
-//                 {/* Project Name */}
-//                 <div className="space-y-2">
-//                   <Label className="text-base font-semibold flex items-center gap-1">
-//                     Project Name <span className="text-red-500">*</span>
-//                   </Label>
-//                   <Input
-//                     name="projectName"
-//                     value={formData.projectName}
-//                     onChange={handleChange}
-//                     placeholder="e.g., Enterprise CRM System"
-//                     className={`h-12 ${formErrors.projectName ? "border-red-500 focus:ring-red-500" : ""}`}
-//                     disabled={status.updateProject === "updating"}
-//                   />
-//                   {formErrors.projectName && <p className="text-red-500 text-sm">{formErrors.projectName}</p>}
-//                 </div>
-
-//                 {/* Category & Client */}
-//                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-//                   <div className="space-y-2">
-//                     <Label className="text-base font-semibold flex items-center gap-1">
-//                       Project Type <span className="text-red-500">*</span>
-//                     </Label>
-//                     <Select value={formData.category} onValueChange={(v) => handleChange({ target: { name: "category", value: v } })}>
-//                       <SelectTrigger className="h-12">
-//                         <SelectValue placeholder="Select type" />
-//                       </SelectTrigger>
-//                       <SelectContent>
-//                         <SelectItem value="client">
-//                           <span className="flex items-center gap-2">
-//                             <div className="w-3 h-3 rounded-full bg-blue-500" />
-//                             Client Project
-//                           </span>
-//                         </SelectItem>
-//                         <SelectItem value="in house">
-//                           <span className="flex items-center gap-2">
-//                             <div className="w-3 h-3 rounded-full bg-purple-500" />
-//                             In-House
-//                           </span>
-//                         </SelectItem>
-//                       </SelectContent>
-//                     </Select>
-//                   </div>
-
-//                   {formData.category === "client" && (
-//                     <div ref={clientSelectRef} className="space-y-2">
-//                       <Label className="text-base font-semibold flex items-center gap-1">
-//                         Client <span className="text-red-500">*</span>
-//                       </Label>
-//                       <ClientSelect
-//                         value={formData.clientId}
-//                         isOpen={isClientSelectOpen}
-//                         onToggle={() => setIsClientSelectOpen((o) => !o)}
-//                         onChange={(v) => {
-//                           setFormData((p) => ({ ...p, clientId: v }));
-//                           setFormErrors((e) => ({ ...e, clientId: "" }));
-//                         }}
-//                         className="h-12"
-//                         disabled={status.updateProject === "updating"}
-//                       />
-//                       {formErrors.clientId && <p className="text-red-500 text-sm">{formErrors.clientId}</p>}
-//                     </div>
-//                   )}
-//                 </div>
-
-//                 {/* Team Lead */}
-//                 <div className="space-y-2">
-//                   <Label className="text-base font-semibold flex items-center gap-1">
-//                     Team Lead <span className="text-red-500">*</span>
-//                   </Label>
-//                   <div ref={teamLeadSelectRef}>
-//                     <TeamLeadSelect
-//                       value={formData.teamLeadId}
-//                       isOpen={isTeamLeadSelectOpen}
-//                       onToggle={() => setIsTeamLeadSelectOpen((o) => !o)}
-//                       onChange={({ teamLeadId, teamLeadName }) => {
-//                         setFormData((p) => ({ ...p, teamLeadId, teamLeadName }));
-//                         setFormErrors((e) => ({ ...e, teamLeadId: "" }));
-//                       }}
-//                       className="h-12"
-//                       disabled={status.updateProject === "updating"}
-//                     />
-//                   </div>
-//                   {formErrors.teamLeadId && <p className="text-red-500 text-sm">{formErrors.teamLeadId}</p>}
-//                 </div>
-
-//                 {/* Dates */}
-//                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-//                   <div className="space-y-2 relative">
-//                     <Label className="text-base font-semibold flex items-center gap-1">
-//                       Start Date <span className="text-red-500">*</span>
-//                     </Label>
-//                     <div className="relative">
-//                       <Input
-//                         type="text"
-//                         value={formData.startDate}
-//                         readOnly
-//                         placeholder="YYYY-MM-DD"
-//                         className={`h-12 pr-10 cursor-pointer ${formErrors.startDate ? "border-red-500 focus:ring-red-500" : ""}`}
-//                         onClick={() => setIsStartDatePickerOpen((o) => !o)}
-//                         disabled={status.updateProject === "updating"}
-//                       />
-//                       <FiCalendar className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-//                       {isStartDatePickerOpen && <CalendarPicker value={formData.startDate} onSelect={handleDateSelect} name="startDate" />}
-//                     </div>
-//                     {formErrors.startDate && <p className="text-red-500 text-sm">{formErrors.startDate}</p>}
-//                   </div>
-
-//                   <div className="space-y-2 relative">
-//                     <Label className="text-base font-semibold flex items-center gap-1">
-//                       Expected End Date <span className="text-red-500">*</span>
-//                     </Label>
-//                     <div className="relative">
-//                       <Input
-//                         type="text"
-//                         value={formData.expectedEndDate}
-//                         readOnly
-//                         placeholder="YYYY-MM-DD"
-//                         className={`h-12 pr-10 cursor-pointer ${formErrors.expectedEndDate ? "border-red-500 focus:ring-red-500" : ""}`}
-//                         onClick={() => formData.startDate && setIsExpectedEndDatePickerOpen((o) => !o)}
-//                         disabled={!formData.startDate || status.updateProject === "updating"}
-//                       />
-//                       <FiCalendar className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-//                       {isExpectedEndDatePickerOpen && <CalendarPicker value={formData.expectedEndDate} onSelect={handleDateSelect} name="expectedEndDate" />}
-//                     </div>
-//                     {formErrors.expectedEndDate && <p className="text-red-500 text-sm">{formErrors.expectedEndDate}</p>}
-//                   </div>
-//                 </div>
-//               </div>
-
-//               {/* RIGHT – UPLOAD */}
-//               <div className="space-y-6">
-//                 <Label className="text-base font-semibold">Project Documents (PDF, Word, Excel, PPT)</Label>
-//                 <div
-//                   className={`border-2 border-dashed rounded-xl p-6 sm:p-8 text-center transition-all cursor-pointer ${dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-50"}`}
-//                   onDragEnter={handleDrag}
-//                   onDragOver={handleDrag}
-//                   onDragLeave={handleDrag}
-//                   onDrop={handleDrop}
-//                   onClick={() => fileInputRef.current?.click()}
-//                 >
-//                   <input
-//                     ref={fileInputRef}
-//                     type="file"
-//                     multiple
-//                     accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-//                     onChange={(e) => e.target.files && handleFiles(e.target.files)}
-//                     className="hidden"
-//                     disabled={status.updateProject === "updating"}
-//                   />
-//                   <FiUpload className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
-//                   <p className="mt-3 text-sm sm:text-base text-gray-600">Drag & drop or click to select</p>
-//                   <p className="text-xs text-gray-500 mt-1">Max 10 MB • PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX</p>
-//                 </div>
-
-//                 {fileErrors.length > 0 && (
-//                   <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-//                     {fileErrors.map((e, i) => (
-//                       <p key={i} className="text-red-700 text-sm">{e}</p>
-//                     ))}
-//                   </div>
-//                 )}
-
-//                 {formData.attachments.length > 0 && (
-//                   <div className="space-y-3">
-//                     <p className="text-sm font-medium text-gray-700">{formData.attachments.length} document(s) ready</p>
-//                     <div className="space-y-3 max-h-96 overflow-y-auto">
-//                       {formData.attachments.map((f, i) => (
-//                         <div key={i} className="bg-white border rounded-lg p-4 flex items-center justify-between group hover:shadow-md transition-shadow">
-//                           <div className="flex items-center gap-3 flex-1 min-w-0">
-//                             {getFileIcon(f.type)}
-//                             <div className="flex-1 min-w-0">
-//                               <p className="text-sm font-medium text-gray-900 truncate">{f.name}</p>
-//                               <p className="text-xs text-gray-500">{(f.size / 1024 / 1024).toFixed(2)} MB</p>
-//                             </div>
-//                           </div>
-//                           <div className="flex items-center gap-2">
-//                             {uploadProgress[f.name] !== undefined ? (
-//                               <div className="w-24">
-//                                 <Progress value={uploadProgress[f.name]} className="h-2" />
-//                                 <p className="text-xs text-center mt-1">{uploadProgress[f.name]}%</p>
-//                               </div>
-//                             ) : (
-//                               <>
-//                                 <Button type="button" variant="ghost" size="icon" onClick={() => viewFile(f)} className="opacity-0 group-hover:opacity-100">
-//                                   <FiEye className="h-4 w-4 text-blue-600" />
-//                                 </Button>
-//                                 <Button type="button" variant="ghost" size="icon" onClick={() => removeFile(i)}>
-//                                   <FiX className="h-4 w-4 text-red-500" />
-//                                 </Button>
-//                               </>
-//                             )}
-//                           </div>
-//                         </div>
-//                       ))}
-//                     </div>
-//                   </div>
-//                 )}
-//               </div>
-//             </div>
-
-//             {/* Description */}
-//             <div className="space-y-2">
-//               <Label className="text-base font-semibold flex items-center gap-1">
-//                 Project Description <span className="text-red-500">*</span>
-//               </Label>
-//               <Textarea
-//                 name="description"
-//                 value={formData.description}
-//                 onChange={handleChange}
-//                 placeholder="Scope, objectives, deliverables..."
-//                 className={`min-h-48 ${formErrors.description ? "border-red-500 focus:ring-red-500" : ""}`}
-//                 disabled={status.updateProject === "updating"}
-//               />
-//               {formErrors.description && <p className="text-red-500 text-sm">{formErrors.description}</p>}
-//             </div>
-
-//             {/* Submit */}
-//             <div className="flex justify-center sm:justify-end pt-8">
-//               <Button
-//                 type="submit"
-//                 size="lg"
-//                 disabled={!isFormValid()}
-//                 className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-10 py-6 text-lg rounded-xl shadow-xl disabled:opacity-50 flex items-center gap-3 min-w-64"
-//               >
-//                 {status.updateProject === "updating" ? (
-//                   <>
-//                     <svg className="animate-spin h-6 w-6" viewBox="0 0 24 24">
-//                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-//                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-16 0z" />
-//                     </svg>
-//                     Updating…
-//                   </>
-//                 ) : (
-//                   <>
-//                     <FiCheck className="h-6 w-6" />
-//                     Update Project
-//                   </>
-//                 )}
-//               </Button>
-//             </div>
-//           </form>
-//         </div>
-//       </div>
-
-//       {/* PREVIEW MODAL */}
-//       {previewFile && (
-//         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={closePreview}>
-//           <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-full overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
-//             <div className="flex items-center justify-between p-4 sm:p-6 border-b bg-gray-50">
-//               <h3 className="text-lg sm:text-xl font-semibold truncate pr-4">{previewFile.name}</h3>
-//               <Button variant="ghost" size="icon" onClick={closePreview}>
-//                 <FiX className="h-6 w-6" />
-//               </Button>
-//             </div>
-//             <div className="flex-1 bg-gray-100 p-4 sm:p-6 overflow-auto">
-//               {previewFile.type === "application/pdf" ? (
-//                 <iframe src={previewFile.url} className="w-full h-full min-h-96 rounded-lg border" title={previewFile.name} />
-//               ) : (
-//                 <div className="bg-white border-2 border-dashed rounded-xl w-full h-96 flex flex-col items-center justify-center">
-//                   <FiFileText className="h-16 w-16 text-gray-400 mb-4" />
-//                   <p className="text-gray-600 text-lg">Preview not available</p>
-//                 </div>
-//               )}
-//             </div>
-//           </div>
-//         </div>
-//       )}
-//     </>
-//   );
-// }
-
-
-
-
-
-
-
-
-
-// components/ProjectEditForm.jsx
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -1636,14 +906,13 @@ export default function ProjectEditForm({ projectId }) {
     }
   }, [dispatch, projectId, status.fetchProject]);
 
-  // AUTO-FILL (FIXED: robust category normalization)
+  // AUTO-FILL (robust category: handles any variation of "in house" or "client")
   useEffect(() => {
     if (project?.data && !initialized && status.fetchProject === "succeeded") {
       const p = project.data;
 
-      // Robust category mapping
-      let rawCategory = p.category || p.catgotyb || "";
-      rawCategory = rawCategory.toString().toLowerCase().trim().replace(/[^a-z\s-]/g, "").replace(/\s+/g, " ");
+      let rawCategory = (p.category || p.catgotyb || "").toString().toLowerCase().trim();
+      rawCategory = rawCategory.replace(/[^a-z\s-]/g, "").replace(/\s+/g, " ");
       const category = rawCategory.includes("house") ? "in house" : rawCategory.includes("client") ? "client" : "";
 
       setFormData({
@@ -1659,22 +928,22 @@ export default function ProjectEditForm({ projectId }) {
       });
 
       setInitialized(true);
+      setHasHandledSuccess(false);
     }
   }, [project, status.fetchProject, initialized]);
 
-  // SUCCESS / ERROR (NO redirect until explicit button click)
+  // SUCCESS / ERROR (ONLY after submit → toast + redirect ONCE)
   useEffect(() => {
     if (status.updateProject === "updated" && !hasHandledSuccess) {
       setHasHandledSuccess(true);
       toast.success("Project updated successfully!");
       dispatch(fetchAllProjects());
       dispatch(resetProjectCreation());
-      // Redirect only on success
       router.push("/project/all");
     } else if (status.updateProject === "update_failed") {
       toast.error(error?.updateProject || "Failed to update project");
       dispatch(resetProjectCreation());
-      setHasHandledSuccess(false);
+      setHasHandledSuccess(false); // allow retry
     }
   }, [status.updateProject, error, hasHandledSuccess, dispatch, router]);
 
@@ -1706,29 +975,32 @@ export default function ProjectEditForm({ projectId }) {
     }
     setFormErrors((prev) => ({ ...prev, [name]: "" }));
     const sanitized = sanitizeInput(value);
-    const updated = { ...formData, [name]: sanitized };
 
-    if (name === "category" && sanitized === "in house") {
-      updated.clientId = undefined;
-      setFormErrors((prev) => ({ ...prev, clientId: "" }));
-    }
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: sanitized };
 
-    if (name === "startDate" && updated.expectedEndDate) {
-      if (new Date(sanitized) > new Date(updated.expectedEndDate)) {
-        setFormErrors((prev) => ({ ...prev, startDate: "Start date cannot be after end date" }));
-      } else {
-        setFormErrors((prev) => ({ ...prev, startDate: "", expectedEndDate: "" }));
+      if (name === "category" && sanitized === "in house") {
+        updated.clientId = undefined;
+        setFormErrors((err) => ({ ...err, clientId: "" }));
       }
-    }
-    if (name === "expectedEndDate" && updated.startDate) {
-      if (new Date(updated.startDate) > new Date(sanitized)) {
-        setFormErrors((prev) => ({ ...prev, expectedEndDate: "End date cannot be before start date" }));
-      } else {
-        setFormErrors((prev) => ({ ...prev, expectedEndDate: "", startDate: "" }));
-      }
-    }
 
-    setFormData(updated);
+      if (name === "startDate" && updated.expectedEndDate) {
+        if (new Date(sanitized) > new Date(updated.expectedEndDate)) {
+          setFormErrors((err) => ({ ...err, startDate: "Start date cannot be after end date" }));
+        } else {
+          setFormErrors((err) => ({ ...err, startDate: "", expectedEndDate: "" }));
+        }
+      }
+      if (name === "expectedEndDate" && updated.startDate) {
+        if (new Date(updated.startDate) > new Date(sanitized)) {
+          setFormErrors((err) => ({ ...err, expectedEndDate: "End date cannot be before start date" }));
+        } else {
+          setFormErrors((err) => ({ ...err, expectedEndDate: "", startDate: "" }));
+        }
+      }
+
+      return updated;
+    });
   };
 
   const handleDateSelect = (name, date) => {
@@ -1822,29 +1094,43 @@ export default function ProjectEditForm({ projectId }) {
     setPreviewFile(null);
   };
 
-  // SUBMIT (NO auto-redirect, only on success)
+  // SUBMIT (separate handler → clean dispatch, no side effects)
   const handleSubmit = async (e) => {
     e.preventDefault();
-    let hasErr = false;
-    const errs = { ...formErrors };
 
+    // Reset errors
+    const newErrors = {
+      projectName: "",
+      description: "",
+      clientId: "",
+      teamLeadId: "",
+      startDate: "",
+      expectedEndDate: "",
+      category: "",
+    };
+    let hasError = false;
+
+    // Required fields
     const required = ["projectName", "description", "teamLeadId", "startDate", "expectedEndDate", "category"];
-    required.forEach((k) => {
-      if (!formData[k]) {
-        errs[k] = "Required";
-        hasErr = true;
+    required.forEach((field) => {
+      if (!formData[field]) {
+        newErrors[field] = "Required";
+        hasError = true;
       }
     });
+
     if (formData.category === "client" && !formData.clientId) {
-      errs.clientId = "Client required";
-      hasErr = true;
+      newErrors.clientId = "Client required";
+      hasError = true;
     }
-    if (hasErr) {
-      setFormErrors(errs);
+
+    if (hasError) {
+      setFormErrors(newErrors);
       toast.error("Please fill all required fields");
       return;
     }
 
+    // Build FormData
     const fd = new FormData();
     fd.append("projectName", formData.projectName);
     fd.append("description", formData.description);
@@ -1854,13 +1140,14 @@ export default function ProjectEditForm({ projectId }) {
     fd.append("startDate", formData.startDate);
     fd.append("expectedEndDate", formData.expectedEndDate);
     fd.append("category", formData.category);
-    formData.attachments.forEach((f) => fd.append("attachments", f));
+    formData.attachments.forEach((file) => fd.append("attachments", file));
 
+    // Reset success flag & dispatch
     setHasHandledSuccess(false);
     try {
       await dispatch(updateProject({ projectId, updatedData: fd })).unwrap();
-      // Success → redirect in useEffect
-    } catch {
+      // Success → handled in useEffect
+    } catch (err) {
       // Error → handled in useEffect
     }
   };
@@ -1874,13 +1161,13 @@ export default function ProjectEditForm({ projectId }) {
   };
 
   const isFormValid = () => {
-    const req = ["projectName", "description", "teamLeadId", "startDate", "expectedEndDate", "category"];
-    const filled = req.every((k) => formData[k]);
+    const required = ["projectName", "description", "teamLeadId", "startDate", "expectedEndDate", "category"];
+    const filled = required.every((k) => !!formData[k]);
     const clientOk = formData.category !== "client" || !!formData.clientId;
     return filled && clientOk && status.updateProject !== "updating";
   };
 
-  // CALENDAR
+  // CALENDAR PICKER
   const CalendarPicker = ({ value, onSelect, name }) => {
     const [year, setYear] = useState(new Date().getFullYear());
     const [month, setMonth] = useState(new Date().getMonth());
@@ -1975,12 +1262,12 @@ export default function ProjectEditForm({ projectId }) {
       <div ref={formRef} className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8 text-center sm:text-left">
-            {/* <div className="flex items-center gap-4 mb-4">
+            <div className="flex items-center gap-4 mb-4">
               <Button variant="outline" onClick={() => router.push("/project/all")} className="flex items-center gap-2">
                 <FiArrowLeft className="h-5 w-5" />
                 <span className="hidden sm:inline">Back</span>
               </Button>
-            </div> */}
+            </div>
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Edit Project</h1>
             <p className="mt-2 text-lg text-gray-600">Update details and documents</p>
           </div>
@@ -1997,8 +1284,9 @@ export default function ProjectEditForm({ projectId }) {
                     name="projectName"
                     value={formData.projectName}
                     onChange={handleChange}
+                    readOnly
                     placeholder="e.g., Enterprise CRM System"
-                    className={`h-12 ${formErrors.projectName ? "border-red-500 focus:ring-red-500" : ""}`}
+                    // className={`h-12 ${formErrors.projectName ? "border-red-500 focus:ring-red-500" : ""}`}
                     disabled={status.updateProject === "updating"}
                   />
                   {formErrors.projectName && <p className="text-red-500 text-sm">{formErrors.projectName}</p>}
@@ -2013,10 +1301,10 @@ export default function ProjectEditForm({ projectId }) {
                     <Select
                       value={formData.category}
                       onValueChange={(v) => {
-                        setFormData(prev => ({ ...prev, category: v }));
+                        setFormData((prev) => ({ ...prev, category: v }));
                         if (v === "in house") {
-                          setFormData(prev => ({ ...prev, clientId: undefined }));
-                          setFormErrors(prev => ({ ...prev, clientId: "" }));
+                          setFormData((prev) => ({ ...prev, clientId: undefined }));
+                          setFormErrors((prev) => ({ ...prev, clientId: "" }));
                         }
                       }}
                       disabled={status.updateProject === "updating"}
@@ -2052,8 +1340,8 @@ export default function ProjectEditForm({ projectId }) {
                         isOpen={isClientSelectOpen}
                         onToggle={() => setIsClientSelectOpen(!isClientSelectOpen)}
                         onChange={(v) => {
-                          setFormData(p => ({ ...p, clientId: v }));
-                          setFormErrors(e => ({ ...e, clientId: "" }));
+                          setFormData((p) => ({ ...p, clientId: v }));
+                          setFormErrors((e) => ({ ...e, clientId: "" }));
                         }}
                         className="h-12"
                         disabled={status.updateProject === "updating"}
@@ -2074,8 +1362,8 @@ export default function ProjectEditForm({ projectId }) {
                       isOpen={isTeamLeadSelectOpen}
                       onToggle={() => setIsTeamLeadSelectOpen(!isTeamLeadSelectOpen)}
                       onChange={({ teamLeadId, teamLeadName }) => {
-                        setFormData(p => ({ ...p, teamLeadId, teamLeadName }));
-                        setFormErrors(e => ({ ...e, teamLeadId: "" }));
+                        setFormData((p) => ({ ...p, teamLeadId, teamLeadName }));
+                        setFormErrors((e) => ({ ...e, teamLeadId: "" }));
                       }}
                       className="h-12"
                       disabled={status.updateProject === "updating"}
@@ -2241,7 +1529,7 @@ export default function ProjectEditForm({ projectId }) {
         </div>
       </div>
 
-      {/* PREVIEW */}
+      {/* PREVIEW MODAL */}
       {previewFile && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={closePreview}>
           <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-full overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
