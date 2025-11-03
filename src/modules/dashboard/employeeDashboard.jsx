@@ -488,7 +488,7 @@ export default function EmployeeDashboard() {
             displayedTasks.map((task) => (
               <div
                 key={task._id}
-                onClick={() => router.push(`/task/${task.task_id}`)}
+                onClick={() => router.push(`/workspace/task/${task.task_id}`)}
                 className="flex items-center justify-between p-4 mb-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors duration-200"
               >
                 <div className="flex items-center gap-4">

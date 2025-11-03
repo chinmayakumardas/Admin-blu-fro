@@ -14,7 +14,11 @@ import {
   getContactById,
   updateContactStatus,
   clearSelectedContact,
+
 } from '@/features/marketing/contactSlice';
+import {
+  fetchMeetingsByContact
+} from '@/features/meet/meetSlice';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card'; // Import Card components
@@ -44,6 +48,8 @@ export default function ContactDetails({ contactId }) {
   const router = useRouter();
   const dispatch = useDispatch();
   const { selectedContact, status, error } = useSelector((state) => state.contact);
+  //meeting check
+   const { meetings } = useSelector((state) => state.meet);
   const [feedback, setFeedback] = useState('');
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('');
@@ -51,11 +57,13 @@ export default function ContactDetails({ contactId }) {
   useEffect(() => {
     if (contactId) {
       dispatch(getContactById(contactId));
+       dispatch(fetchMeetingsByContact(contactId));
     }
     return () => {
       dispatch(clearSelectedContact());
     };
   }, [contactId, dispatch]);
+console.log(meetings);
 
   const handleStatusUpdate = () => {
     if (contactId && selectedStatus) {
@@ -126,39 +134,11 @@ export default function ContactDetails({ contactId }) {
         return 'bg-gray-100 text-gray-800 border-gray-300 hover:bg-gray-200 hover:border-gray-400';
     }
   };
-const meetingRefs=[
-  { _id: '674a1b...', meetingId: 'MEET-oct-31-001', title: 'Project Kickoff' },
-  { _id: '674a1c...', meetingId: 'MEET-oct-31-002', title: 'Design Review' }
-]
 
-  const actionHistory = selectedContact?.actionHistory || [
-    {
-      status: 'Contact Received',
-      feedback: 'Initial inquiry received via website form. Awaiting first response.',
-      date: '2025-10-01 10:23 AM',
-    },
-    {
-      status: 'Follow-up Taken',
-      feedback: 'Marketing team contacted the client for requirement clarification.',
-      date: '2025-10-03 02:15 PM',
-    },
-    {
-      status: 'In Progress',
-      feedback: 'Client requested a demo. Schedule shared for next week.',
-      date: '2025-10-05 11:42 AM',
-    },
-    {
-      status: 'Converted to Lead',
-      feedback: 'Client confirmed interest in product subscription. Lead transferred to sales.',
-      date: '2025-10-07 09:30 AM',
-    },
-    {
-      status: 'Closed',
-      feedback: 'No further updates from client. Case closed after multiple follow-ups.',
-      date: '2025-10-15 04:55 PM',
-    },
-  ];
 
+
+  
+  
   return (
     <div className="p-4">
       <Card className="overflow-hidden">
@@ -198,7 +178,7 @@ const meetingRefs=[
 
           {/* Loading State */}
           {status === 'loading' && !selectedContact ? (
-            <div className="flex flex-col items-center justify-center py-12">
+            <div className="flex flex-col items-center justify-center py-12 min-h-screen">
               <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
               <span className="mt-2 text-gray-600">Loading contact details...</span>
             </div>
@@ -269,67 +249,18 @@ const meetingRefs=[
                 </div>
               </div>
 
-              {/* Action History */}
-              {/* {actionHistory.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    Action History
-                  </h3>
-                  <div className="space-y-4 overflow-y-auto pr-2">
-                    {actionHistory.map((action, index) => {
-                      let historyColor = 'bg-yellow-100 text-yellow-800';
-                      let HistoryIcon = AlertCircle;
-                      if (action.status === 'Converted to Lead') {
-                        historyColor = 'bg-green-100 text-green-800';
-                        HistoryIcon = CheckCircle;
-                      } else if (action.status === 'Closed') {
-                        historyColor = 'bg-red-100 text-red-800';
-                        HistoryIcon = XCircle;
-                      } else if (action.status === 'In Progress') {
-                        historyColor = 'bg-blue-100 text-blue-800';
-                        HistoryIcon = AlertCircle;
-                      } else if (action.status === 'Follow-up Taken') {
-                        historyColor = 'bg-purple-100 text-purple-800';
-                        HistoryIcon = AlertCircle;
-                      }
-                      return (
-                        <div key={index} className="border-l-2 border-gray-200 pl-4">
-                          <div className="flex items-center mb-1">
-                            <HistoryIcon className="h-4 w-4 mr-2 text-gray-500" />
-                            <span
-                              className={cn(
-                                'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
-                                historyColor
-                              )}
-                            >
-                              {action.status}
-                            </span>
-                          </div>
-                          {action.feedback && <p className="text-sm text-gray-600">{action.feedback}</p>}
-                          {action.date && <p className="text-xs text-gray-400">{action.date}</p>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-              <Button
-              onClick={handleStatusUpdate}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-              // disabled={!selectedStatus}
-            >
-              Schedule Meeting
-            </Button> */}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
   {/* Left Column: Action History */}
+  
   <div className="bg-white rounded-2xl shadow-sm p-4">
     <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
       Action History
     </h3>
 
-    {actionHistory.length > 0 ? (
+    {selectedContact?.conversations.length > 0 ? (
       <div className="space-y-4 overflow-y-auto max-h-72 pr-2">
-        {actionHistory.map((action, index) => {
+        {selectedContact?.conversations.map((action, index) => {
           let historyColor = 'bg-yellow-100 text-yellow-800';
           let HistoryIcon = AlertCircle;
 
@@ -382,37 +313,51 @@ const meetingRefs=[
         Meeting References
       </h3>
 
-      {meetingRefs && meetingRefs.length > 0 ? (
+      {meetings && meetings.length > 0 ? (
         <div className="flex flex-wrap gap-2">
-          {meetingRefs.map((meeting) => (
+          {meetings.map((meeting) => (
             <span
               key={meeting._id}
               onClick={() => router.push(`/meet/${meeting.meetingId}`)}
               className="cursor-pointer bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full hover:bg-blue-200 transition"
             >
-              {meeting.meetingId} – {meeting.title}
+              {meeting.title} – 
+              
+              {meeting.mode}
             </span>
           ))}
         </div>
+      // {meetingRefs && meetingRefs.length > 0 ? (
+      //   <div className="flex flex-wrap gap-2">
+      //     {meetingRefs.map((meeting) => (
+      //       <span
+      //         key={meeting._id}
+      //         onClick={() => router.push(`/meet/${meeting.meetingId}`)}
+      //         className="cursor-pointer bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full hover:bg-blue-200 transition"
+      //       >
+      //         {meeting.meetingId} – {meeting.title}
+      //       </span>
+      //     ))}
+      //   </div>
       ) : (
         <p className="text-sm text-gray-500">No meeting references found.</p>
       )}
     </div>
-
-    <div className="mt-6">
+  <div className="mt-6">
       <Button
       onClick={() => setOpenMeetDialog(true)}
-        className="bg-blue-600 hover:bg-blue-700 text-white w-full md:w-auto"
+        className="bg-green-600 hover:bg-green-700 text-white w-full md:w-auto"
       >
         Schedule Meeting
       </Button>
     </div>
+  
   </div>
 </div>
 
             </div>
           ) : (
-            <div className="text-lg text-gray-600 text-center py-6">No contact found.</div>
+            <div className="text-lg text-gray-600 text-center py-6 min-h-screen">No contact found.</div>
           )}
         </CardContent>
       </Card>
@@ -457,15 +402,14 @@ const meetingRefs=[
 
       {/* meeting schedule Dialog */}
       <Dialog open={openMeetDialog} onOpenChange={setOpenMeetDialog}>
-        <DialogContent className="">
+        <DialogContent className="max-h-[85dvh]  min-w-[50vw] mt-4 ">
+     
           <DialogHeader>
-            <DialogTitle>Schedule a New Meeting</DialogTitle>
+            <DialogTitle>Schedule a  Meeting</DialogTitle>
           </DialogHeader>
 
-          {/* The form or component you want to render */}
-          <div className="mt-4">
-            <ScheduleMeeting ref="meeting" onClose={() => setOpenMeetDialog(false)} />
-          </div>
+               <ScheduleMeeting contactId={contactId} meetingRefs={contactId} onClose={() => setOpenMeetDialog(false)} />
+               {/* <ScheduleMeeting meetingRefs="meeting" onClose={() => setOpenMeetDialog(false)} /> */}
         </DialogContent>
       </Dialog>
     </div>

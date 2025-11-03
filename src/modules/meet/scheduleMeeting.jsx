@@ -5,7 +5,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  createMeet,
+  createMeeting,
   resetCreateStatus,
   clearError,
 } from "@/features/meet/meetSlice";
@@ -26,7 +26,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-export default function ScheduleMeetingModal({ meetingRefs, onClose }) {
+export default function ScheduleMeetingModal({ meetingRefs, contactId,onClose }) {
   const searchParams = useSearchParams();
   const dispatch = useDispatch();
 
@@ -54,6 +54,7 @@ export default function ScheduleMeetingModal({ meetingRefs, onClose }) {
     endTime: "",
     mode: "offline",
     meetingLink: "",
+    contactId:"",
     reference: finalRef,
   });
 
@@ -91,6 +92,7 @@ export default function ScheduleMeetingModal({ meetingRefs, onClose }) {
     const payload = {
       title: form.title,
       agenda: form.agenda,
+      contactId: contactId,
       date: form.date,
       startTime: `${form.date}T${form.startTime}:00.000Z`,
       endTime: `${form.date}T${form.endTime}:00.000Z`,
@@ -101,7 +103,7 @@ export default function ScheduleMeetingModal({ meetingRefs, onClose }) {
       // endNote: REMOVED ENTIRELY
     };
 
-    const result = await dispatch(createMeet(payload));
+    const result = await dispatch(createMeeting(payload));
     if (result.type.endsWith("fulfilled")) {
       toast.success("Meeting scheduled successfully!");
       onClose();
@@ -116,15 +118,14 @@ export default function ScheduleMeetingModal({ meetingRefs, onClose }) {
     (form.mode === "offline" || form.meetingLink);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5  min-w-full ">
 
       {/* REFERENCE BADGE */}
       {form.reference && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
-          <span className="font-medium text-blue-900">Linked to:</span>{" "}
+          <span className="font-medium text-blue-900">Event type:</span>{" "}
           <span className="font-mono text-blue-700">{form.reference}</span>
-          {meetingRefs && " (from props)"}
-          {urlRef && !meetingRefs && " (from URL)"}
+        
         </div>
       )}
 
@@ -136,19 +137,23 @@ export default function ScheduleMeetingModal({ meetingRefs, onClose }) {
           value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
           className="mt-1"
+           maxLength="100"
         />
       </div>
 
       {/* AGENDA - EXPANDABLE */}
-      <div>
-        <Label>Agenda</Label>
+      <div >
+        <Label>Agenda<span className="text-red-500">*</span></Label>
         <Textarea
-          placeholder="1. Review targets\n2. Demo new features..."
+          placeholder="1. Review targets, 
+          2. Demo new features..."
           rows={4}
-          className="mt-1 resize-y min-h-24"
+          maxLength="500"
+          className="mt-1 resize-y min-h-50"
           value={form.agenda}
           onChange={(e) => setForm({ ...form, agenda: e.target.value })}
         />
+        <div>{form.agenda.length}/500</div>
       </div>
 
       {/* DATE */}
@@ -237,12 +242,12 @@ export default function ScheduleMeetingModal({ meetingRefs, onClose }) {
       )}
 
       {/* ERROR */}
-      {error && (
+      {/* {error && (
         <Alert variant="destructive">
           <AlertCircle className="w-4 h-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
-      )}
+      )} */}
 
       {/* BUTTONS */}
       <div className="flex flex-col sm:flex-row gap-3 pt-4">
@@ -258,7 +263,7 @@ export default function ScheduleMeetingModal({ meetingRefs, onClose }) {
           type="submit"
           onClick={handleSubmit}
           disabled={!isValid || createStatus === "loading"}
-          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium"
+          className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-medium"
         >
           {createStatus === "loading" ? (
             <>
@@ -276,3 +281,43 @@ export default function ScheduleMeetingModal({ meetingRefs, onClose }) {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

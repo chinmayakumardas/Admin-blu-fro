@@ -114,18 +114,27 @@ export const fullNav = [
     ]),
   },
 
-  // // 📣 Marketing
+  // 📣 Marketing
   // {
   //   title: "Marketing",
   //   icon: "FileText",
   //   alias: "marketing-root",
   //   roles: ["cpcGroup"],
   //   items: withBase(MARKETING_BASE, [
-  //     { title: "Campaigns", path: "campaigns/all-campaigns", alias: "marketing-campaigns-all", roles: ["cpcGroup", "employeeGroup"] },
-  //     { title: "Lead Contacts", path: "contacts/all-contacts", alias: "marketing-contacts-all", roles: ["cpcGroup", "employeeGroup"] },
+  //     { title: "Contacts", path: "contacts", alias: "marketing-campaigns-all", roles: ["cpcGroup", "employeeGroup"] },
+  //     // { title: "Lead Contacts", path: "contacts/all-contacts", alias: "marketing-contacts-all", roles: ["cpcGroup", "employeeGroup"] },
   //   ]),
   // },
-
+  {
+   title: "Contacts ",
+   url: "#",
+   icon: "Inbox",
+   roles: ["cpcGroup"],
+   items: [
+    //  { title: "Overview", url: "/marketing", roles: ["cpcGroup", "employeeGroup"] },
+     { title: "Received Contacts", url: "/marketing/contacts", roles: ["cpcGroup", "employeeGroup"] },
+   ],
+ },
   // // 💰 Sales
   // {
   //   title: "Sales",
@@ -133,45 +142,44 @@ export const fullNav = [
   //   alias: "sales-root",
   //   roles: ["cpcGroup"],
   //   items: withBase(SALES_BASE, [
-  //     { title: "Quotation Requests", path: "quotations/all-requests", alias: "sales-quotations-all", roles: ["cpcGroup", "employeeGroup"] },
-  //     { title: "Approved Quotations", path: "quotations/approved", alias: "sales-quotations-approved", roles: ["cpcGroup", "employeeGroup"] },
+  //     { title: "Quotation", path: "quotation", alias: "sales-quotations-all", roles: ["cpcGroup", "employeeGroup"] },
+  //     // { title: "Approved Quotations", path: "quotations/approved", alias: "sales-quotations-approved", roles: ["cpcGroup", "employeeGroup"] },
   //   ]),
   // },
+// // 💰 Sales (WITHOUT base)
+//   {
+//     title: "Sales",
+//     icon: "Users",
+//     alias: "sales-root",
+//     roles: ["cpcGroup"],
+//     items: [
+//           { title: "Quotation", path: "quotation", alias: "sales-quotations-all", roles: ["cpcGroup", "employeeGroup"] },
+//       { title: "Approved Quotations", path: "quotations/approved", alias: "sales-quotations-approved", roles: ["cpcGroup", "employeeGroup"] },
+  
+//     ],
+//   },
 
-  // // 💸 Finance
-  // {
-  //   title: "Finance",
-  //   icon: "FileText",
-  //   alias: "finance-root",
-  //   roles: ["cpcGroup"],
-  //   items: withBase(FINANCE_BASE, [
-  //     { title: "Expense Tracker", path: "expenses/all-expenses", alias: "finance-expenses-all", roles: ["cpcGroup"] },
-  //     { title: "Billing Reports", path: "billing/all-billing", alias: "finance-billing-all", roles: ["cpcGroup"] },
-  //   ]),
-  // },
+  {
+   title: "Quotations",
+   url: "#",
+   icon: "Inbox",
+   roles: ["cpcGroup"],
+   items: [
+     { title: "All Quotations", url: "/quotation", roles: ["cpcGroup", "employeeGroup"] },
+   ],
+ },
 
-  // // 📊 Reports
-  // {
-  //   title: "Reports",
-  //   icon: "FolderClosed",
-  //   alias: "reports-root",
-  //   roles: ["cpcGroup"],
-  //   items: withBase(REPORTS_BASE, [
-  //     { title: "Performance", path: "performance/overview", alias: "reports-performance-overview", roles: ["cpcGroup"] },
-  //     { title: "Analytics", path: "analytics/overview", alias: "reports-analytics-overview", roles: ["cpcGroup"] },
-  //   ]),
-  // },
 
-  // // ⚙️ Master Data
-  // {
-  //   title: "Master",
-  //   icon: "FolderClosed",
-  //   alias: "master-root",
-  //   roles: ["cpcGroup"],
-  //   items: withBase(MASTER_BASE, [
-  //     { title: "Service Catalog", path: "services/all-services", alias: "master-services-all", roles: ["cpcGroup"] },
-  //     { title: "Industry Setup", path: "industry/all-industries", alias: "master-industry-all", roles: ["cpcGroup"] },
-  //     { title: "Meeting Slots", path: "slots/all-slots", alias: "master-slots-all", roles: ["cpcGroup"] },
-  //   ]),
-  // },
+  // ⚙️ Master Data
+  {
+    title: "Master",
+    icon: "FolderClosed",
+    alias: "master-root",
+    roles: ["cpcGroup"],
+    items: withBase(MASTER_BASE, [
+      { title: "Service Catalog", path: "services", alias: "master-services-all", roles: ["cpcGroup"] },
+      { title: "Industry Setup", path: "industry", alias: "master-industry-all", roles: ["cpcGroup"] },
+      { title: "Meeting Slots", path: "slots", alias: "master-slots-all", roles: ["cpcGroup"] },
+    ]),
+  },
 ];

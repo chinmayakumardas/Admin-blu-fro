@@ -292,7 +292,7 @@ export default function Contact() {
                     className="text-white cursor-pointer font-semibold min-w-[120px]"
                     onClick={() => handleSort('brandCategory')}
                   >
-                    Brand Type
+              Contact Source
                     <ArrowUpDown className="inline ml-2 h-4 w-4 text-success" />
                   </TableHead>
                   <TableHead className="font-semibold min-w-[100px] text-white">Status</TableHead>
@@ -333,7 +333,7 @@ export default function Contact() {
                         {contact.email || contact.phone || 'N/A'}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
-                        {contact.brandCategory || 'N/A'}
+                        {contact.inquirySource || 'N/A'}
                       </TableCell>
                       <TableCell>
                         <span

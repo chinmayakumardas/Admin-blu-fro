@@ -28,6 +28,7 @@ import taskReducer from '@/features/taskSlice';
 import subTaskReducer from '@/features/subTaskSlice';
 
 import bugReducer from '@/features/bugSlice';
+import issuesReducer from '@/features/issues/issuesSlice';
 import documentReducer from '@/features/documentSlice';
 
 import teamMembersReducer from '@/features/teamMembersSlice';
@@ -107,6 +108,7 @@ meet:meetReducer,
   subTask:subTaskReducer,
   team: teamReducer,
   bugs: bugReducer,
+  issues: issuesReducer,
   cause: causeReducer,
  
 
