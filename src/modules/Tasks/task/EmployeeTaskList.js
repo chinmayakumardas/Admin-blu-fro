@@ -416,7 +416,7 @@ const EmployeeTasksList = () => {
             <NoResults />
           ) : (
             <>
-              <div className="overflow-x-auto rounded-md border">
+              <div className="overflow-x-auto rounded-md border min-h-screen">
                 <Table className="w-full table-fixed">
                   <TableHeader>
                     <TableRow className="bg-gray-50 text-xs sm:text-sm">

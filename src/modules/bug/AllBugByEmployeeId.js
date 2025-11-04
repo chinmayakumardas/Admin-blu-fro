@@ -978,12 +978,13 @@ export default function AllissuesList() {
             <NoResults />
           ) : (
             <>
-              <div className="overflow-x-auto rounded-md border">
+              <div className="overflow-x-auto rounded-md border min-h-screen">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50 text-xs sm:text-sm">
-                      <TableHead className="font-bold text-gray-700">Issue Title</TableHead>
-                      <TableHead className="font-bold text-gray-700 hidden md:table-cell">Project Name</TableHead>
+                            <TableHead className="font-bold text-gray-700 w-1/2">Issue Title</TableHead>
+
+      <TableHead className="font-bold text-gray-700 hidden md:table-cell w-1/5">Project Name</TableHead>
                       <TableHead className="font-bold text-gray-700">Status</TableHead>
                       <TableHead className="font-bold text-gray-700 hidden lg:table-cell">Deadline</TableHead>
                       <TableHead className="font-bold text-gray-700 hidden sm:table-cell">Priority</TableHead>

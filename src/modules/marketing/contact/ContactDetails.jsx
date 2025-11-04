@@ -16,6 +16,8 @@ import {
   clearSelectedContact,
 
 } from '@/features/marketing/contactSlice';
+import { Progress } from '@/components/ui/progress';
+
 import {
   fetchMeetingsByContact
 } from '@/features/meet/meetSlice';
@@ -43,13 +45,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import ScheduleMeeting from '@/modules/meet/scheduleMeeting';
+import { formatDateTimeUTC } from '@/utils/formatDate';
 
 export default function ContactDetails({ contactId }) {
+  
   const router = useRouter();
   const dispatch = useDispatch();
   const { selectedContact, status, error } = useSelector((state) => state.contact);
   //meeting check
-   const { meetings } = useSelector((state) => state.meet);
+  const { meetings } = useSelector((state) => state.meet);
   const [feedback, setFeedback] = useState('');
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('');
@@ -63,8 +67,13 @@ export default function ContactDetails({ contactId }) {
       dispatch(clearSelectedContact());
     };
   }, [contactId, dispatch]);
-console.log(meetings);
+// console.log(meetings);
 
+  const FREE_TIER_LIMIT = 1;
+const totalMeetings = meetings?.length || 0;
+const progressValue = Math.min((totalMeetings / FREE_TIER_LIMIT) * 100, 100);
+const isFreeTierFull = totalMeetings >= FREE_TIER_LIMIT;
+const isContactClosed = selectedContact?.status === 'Closed';
   const handleStatusUpdate = () => {
     if (contactId && selectedStatus) {
       if (feedback.length > 500) {
@@ -142,7 +151,7 @@ console.log(meetings);
   return (
     <div className="p-4">
       <Card className="overflow-hidden">
-        <CardContent className="p-6 sm:p-8">
+        <CardContent className="p-6 sm:p-8 min-h-screen">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
               <button
@@ -165,6 +174,9 @@ console.log(meetings);
                 </svg>
                 Back
               </button>
+              {
+                selectedContact && (
+
             <span
               className={cn(
                 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium',
@@ -174,6 +186,8 @@ console.log(meetings);
               <StatusIcon className="h-4 w-4 mr-1" />
               {currentStatus || 'N/A'}
             </span>
+                )
+              }
           </div>
 
           {/* Loading State */}
@@ -294,8 +308,8 @@ console.log(meetings);
               {action.feedback && (
                 <p className="text-sm text-gray-600">{action.feedback}</p>
               )}
-              {action.date && (
-                <p className="text-xs text-gray-400">{action.date}</p>
+              {action.timestamp && (
+                <p className="text-xs text-gray-400">{formatDateTimeUTC(action.timestamp)}</p>
               )}
             </div>
           );
@@ -307,7 +321,7 @@ console.log(meetings);
   </div>
 
   {/* Right Column: Meeting References + Schedule Button */}
-  <div className="bg-white rounded-2xl shadow-sm p-4 flex flex-col justify-between">
+  {/* <div className="bg-white rounded-2xl shadow-sm p-4 flex flex-col justify-between">
     <div>
       <h3 className="text-lg font-semibold text-gray-800 mb-3">
         Meeting References
@@ -327,22 +341,14 @@ console.log(meetings);
             </span>
           ))}
         </div>
-      // {meetingRefs && meetingRefs.length > 0 ? (
-      //   <div className="flex flex-wrap gap-2">
-      //     {meetingRefs.map((meeting) => (
-      //       <span
-      //         key={meeting._id}
-      //         onClick={() => router.push(`/meet/${meeting.meetingId}`)}
-      //         className="cursor-pointer bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full hover:bg-blue-200 transition"
-      //       >
-      //         {meeting.meetingId} – {meeting.title}
-      //       </span>
-      //     ))}
-      //   </div>
+     
       ) : (
         <p className="text-sm text-gray-500">No meeting references found.</p>
       )}
     </div>
+    {
+      
+    }
   <div className="mt-6">
       <Button
       onClick={() => setOpenMeetDialog(true)}
@@ -352,7 +358,64 @@ console.log(meetings);
       </Button>
     </div>
   
+  </div> */}
+  {/* Right Column: Meeting References + Schedule Button */}
+<div className="bg-white rounded-2xl shadow-sm p-4 flex flex-col justify-between">
+  <div>
+    <h3 className="text-lg font-semibold text-gray-800 mb-3">
+      Meeting References
+    </h3>
+
+    {/* Meeting Tracker */}
+    <div className="mb-4">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-sm text-gray-700 font-medium">
+          Meeting Tracker ({Math.min(totalMeetings, FREE_TIER_LIMIT)} / {FREE_TIER_LIMIT})
+        </span>
+        {isFreeTierFull && (
+          <span className="text-xs text-red-600 font-semibold">
+            Free tier limit reached
+          </span>
+        )}
+      </div>
+      <Progress value={progressValue} className="h-2 rounded-full" />
+    </div>
+
+    {/* Meeting list */}
+    {meetings && meetings.length > 0 ? (
+      <div className="flex flex-wrap gap-2">
+        {meetings.slice(0, FREE_TIER_LIMIT).map((meeting) => (
+          <span
+            key={meeting._id}
+            title="Click View meeting Details!"
+            onClick={() => router.push(`/meet/${meeting.meetingId}`)}
+            className="cursor-pointer bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full hover:bg-blue-200 transition"
+          >
+            {meeting.title} – {meeting.mode}
+          </span>
+        ))}
+      </div>
+    ) : (
+      <p className="text-sm text-gray-500">No meeting references found.</p>
+    )}
   </div>
+
+  {/* Schedule Button */}
+  <div className="mt-6">
+    <Button
+      onClick={() => setOpenMeetDialog(true)}
+      className="bg-green-600 hover:bg-green-700 text-white w-full md:w-auto disabled:opacity-60 disabled:cursor-not-allowed"
+      disabled={isFreeTierFull || isContactClosed}
+    >
+      {isContactClosed
+        ? 'Contact Closed'
+        : isFreeTierFull
+        ? 'Meeting Limit Reached'
+        : 'Schedule Meeting'}
+    </Button>
+  </div>
+</div>
+
 </div>
 
             </div>

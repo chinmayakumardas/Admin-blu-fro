@@ -270,7 +270,7 @@ export default function Contact() {
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-lg border">
+          <div className="overflow-x-auto rounded-lg border min-h-[50dvh]">
             <Table>
               <TableHeader>
                 <TableRow className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">

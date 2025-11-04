@@ -2,7 +2,6 @@
 
 
 
-
 "use client";
 
 import { format } from "date-fns";
@@ -13,21 +12,12 @@ import {
   fetchBugByProjectId,
   downloadBugsByProjectId,
   downloadBugsByMemberId,
+  selectEmployeeProjectBugs,
   fetchEmployeeProjectBugs,
 } from "@/features/bugSlice";
-import { fetchProjectById } from "@/features/projectSlice";
 import { getTeamMembersByProjectId } from "@/features/teamSlice";
-
-import {
-  X,
-  CalendarIcon,
-  Filter,
-  Download,
-  Edit,
-  Plus,
-} from "lucide-react";
+import { X, CalendarIcon, Filter, Download, Edit } from "lucide-react";
 import { toast } from "sonner";
-
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -37,11 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Table,
@@ -51,12 +37,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Tooltip,
   TooltipContent,
@@ -66,19 +47,16 @@ import {
 import { cn } from "@/lib/utils";
 import { formatDateTimeIST } from "@/utils/formatDate";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-
 import BugDetailsViewModal from "./BugDetailsViewModal";
 import BugEditModal from "./BugEditModal";
-import ReportIssueForm from "./ReportIssueForm";
 
-/* --------------------------------------------------- */
 const ProjectbugList = ({ projectId, teamLeadId }) => {
   const { currentUser, isTeamLead } = useCurrentUser(teamLeadId);
-  const { project: { data: projectData } } = useSelector((state) => state.project);
   const dispatch = useDispatch();
   const router = useRouter();
 
-  /* ----------  STATE  ---------- */
+  // State management
+  const [showLoader, setShowLoader] = useState(true);
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedBug, setSelectedBug] = useState(null);
@@ -99,127 +77,75 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
   const [sortConfig, setSortConfig] = useState({ key: "", direction: "asc" });
   const [currentPage, setCurrentPage] = useState(1);
   const bugsPerPage = 10;
-  const [showCreateIssue, setShowCreateIssue] = useState(false);
 
-  /* ----------  REDUX SELECTORS  ---------- */
+  // Redux selectors
   const bugsByProjectId = useSelector((state) => state.bugs.bugsByProjectId);
-  const employeeProjectBugs = useSelector((state) => state.bugs.employeeProjectBugs);
-  const teamMembersByProjectId = useSelector((state) => state.team.teamMembersByProjectId);
+  const bugsByEmployeeId = useSelector((state) => state.bugs.bugsByEmployeeId);
   const loading = useSelector((state) => state.bugs.loading);
+  const error = useSelector((state) => state.bugs.error);
+  const teamMembersByProjectId = useSelector((state) => state.team.teamMembersByProjectId);
+  const teamStatus = useSelector((state) => state.team.status);
 
   const employeeId = currentUser?.id;
+  const employeeProjectBugs = useSelector((state) => {
+    try {
+      return selectEmployeeProjectBugs(state, projectId, employeeId);
+    } catch (error) {
+      return [];
+    }
+  });
 
-  /* ----------  FETCH DATA  ---------- */
+  // Fetch bugs and team members
   useEffect(() => {
     if (projectId) {
       dispatch(fetchBugByProjectId(projectId));
       dispatch(getTeamMembersByProjectId(projectId));
     }
-  }, [dispatch, projectId]);
+    const timer = setTimeout(() => setShowLoader(false), 1000);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [dispatch, viewMode, projectId]);
 
+  // Fetch employee project bugs for "my" view
   useEffect(() => {
-    
-    if (viewMode === "my" && employeeId) {
+    if (viewMode === "my" && projectId && employeeId) {
       dispatch(fetchEmployeeProjectBugs({ projectId, employeeId }));
-    } else {
-      dispatch(fetchBugByProjectId(projectId));
     }
-  }, [dispatch, viewMode, employeeId]);
+  }, [dispatch, viewMode, projectId, employeeId, showEditModal]);
 
-  /* ----------  ROLE LOGIC  ---------- */
+  // Choose bugs based on role and view mode
   const isCpc = currentUser?.role === "cpc";
   const showAllViewOption = isCpc || isTeamLead;
   const showAssignedFilter = showAllViewOption && viewMode === "all";
-  const showActionColumn = viewMode === "all" && (isCpc || isTeamLead);
 
   useEffect(() => {
-    if (!showAllViewOption) setViewMode("my");
+    if (!showAllViewOption) {
+      setViewMode("my");
+    }
   }, [showAllViewOption]);
 
-  /* ----------  BUG LIST  ---------- */
   const bugs = useMemo(() => {
-    return viewMode === "my" ? employeeProjectBugs || [] : bugsByProjectId || [];
-  }, [viewMode, employeeProjectBugs, bugsByProjectId]);
-
-  /* ----------  HELPERS  ---------- */
-  const getInitials = (name) => {
-    if (!name) return "NA";
-    if (name === currentUser?.name && viewMode === "my") return "Me";
-    const parts = name.split(" ");
-    return parts.length > 1
-      ? `${parts[0][0]}${parts[1][0]}`.toUpperCase()
-      : name.slice(0, 2).toUpperCase();
-  };
-  const truncate = (s) => (s?.length > 50 ? `${s.slice(0, 50)}...` : s || "");
-
-  // map member name → member id (uses teamMembersByProjectId)
-  const assignedMembersMap = useMemo(() => {
-    const map = {};
-    (teamMembersByProjectId || []).forEach((m) => {
-      map[m.memberName] = m.memberId;
-    });
-    return map;
-  }, [teamMembersByProjectId]);
-
-  /* ----------  FILTER / SORT / SEARCH  ---------- */
-  const filteredBugs = useMemo(() => {
-    let list = [...bugs];
-
-    // search
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter(
-        (b) =>
-          b.title?.toLowerCase().includes(q) ||
-          b.bug_id?.toLowerCase().includes(q) ||
-          b?.assignedToDetails?.memberName?.toLowerCase().includes(q)
-      );
+    if (isCpc || (isTeamLead && viewMode === "all")) {
+      return bugsByProjectId || [];
+    } else if (viewMode === "my") {
+      return employeeProjectBugs || [];
+    } else {
+      return bugsByProjectId || [];
     }
+  }, [isCpc, isTeamLead, viewMode, bugsByProjectId, employeeProjectBugs]);
 
-    // filters
-    if (priorityFilter !== "all") list = list.filter((b) => b.priority === priorityFilter);
-    if (statusFilter !== "all") list = list.filter((b) => b.status === statusFilter);
-    if (assignedToFilter !== "all")
-      list = list.filter((b) => b?.assignedToDetails?.memberName === assignedToFilter);
-    if (dateFrom || dateTo) {
-      list = list.filter((b) => {
-        const d = new Date(b.createdAt);
-        return (!dateFrom || d >= dateFrom) && (!dateTo || d <= dateTo);
-      });
-    }
-
-    // sort
-    if (sortConfig.key) {
-      list.sort((a, b) => {
-        const getVal = (obj, path) =>
-          path.split(".").reduce((o, k) => (o ? o[k] : ""), obj);
-        const aVal = getVal(a, sortConfig.key);
-        const bVal = getVal(b, sortConfig.key);
-        const cmp = String(aVal || "").localeCompare(String(bVal || ""));
-        return sortConfig.direction === "asc" ? cmp : -cmp;
-      });
-    }
-    return list;
-  }, [
-    bugs,
-    searchQuery,
-    priorityFilter,
-    statusFilter,
-    assignedToFilter,
-    dateFrom,
-    dateTo,
-    sortConfig,
-  ]);
-
-  /* ----------  HANDLERS  ---------- */
+  // Handlers
   const handleViewBug = (bug) => {
     setSelectedBug(bug);
     setShowViewModal(true);
   };
+
   const handleEditBug = (bug) => {
     setSelectedBugForEdit(bug);
     setShowEditModal(true);
   };
+
   const handleSort = (key) => {
     setSortConfig((prev) => ({
       key,
@@ -228,6 +154,75 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
     setCurrentPage(1);
   };
 
+  // Memoized computed values
+  const assignedMembers = useMemo(() => {
+    if (!Array.isArray(bugs)) return [];
+    return Array.from(new Set(bugs.map((b) => b?.assignedToDetails?.memberName).filter(Boolean)));
+  }, [bugs]);
+
+  const assignedMembersMap = useMemo(() => {
+    if (!Array.isArray(bugs)) return {};
+    return bugs.reduce((map, bug) => {
+      if (bug.assignedToDetails?.memberName && bug.assignedTo) {
+        map[bug.assignedToDetails.memberName] = bug.assignedTo;
+      }
+      return map;
+    }, {});
+  }, [bugs]);
+
+  // Filtered and sorted bugs
+  const filteredBugs = useMemo(() => {
+    let filtered = Array.isArray(bugs) ? [...bugs] : [];
+
+    // Search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (bug) =>
+          bug.title?.toLowerCase().includes(query) ||
+          bug.bug_id?.toLowerCase().includes(query) ||
+          bug?.assignedToDetails?.memberName?.toLowerCase().includes(query)
+      );
+    }
+
+    // Filters
+    if (priorityFilter !== "all") filtered = filtered.filter((bug) => bug.priority === priorityFilter);
+    if (statusFilter !== "all") filtered = filtered.filter((bug) => bug.status === statusFilter);
+    if (assignedToFilter !== "all")
+      filtered = filtered.filter((bug) => bug?.assignedToDetails?.memberName === assignedToFilter);
+    if (dateFrom || dateTo) {
+      filtered = filtered.filter((bug) => {
+        if (!bug.createdAt) return false;
+        const bugDate = new Date(bug.createdAt);
+        return (!dateFrom || bugDate >= dateFrom) && (!dateTo || bugDate <= dateTo);
+      });
+    }
+
+    // Sorting
+    if (sortConfig.key) {
+      filtered.sort((a, b) => {
+        let aValue = sortConfig.key.includes(".")
+          ? sortConfig.key.split(".").reduce((obj, key) => obj?.[key], a)
+          : a[sortConfig.key];
+        let bValue = sortConfig.key.includes(".")
+          ? sortConfig.key.split(".").reduce((obj, key) => obj?.[key], b)
+          : b[sortConfig.key];
+
+        if (typeof aValue === "string") aValue = aValue.toLowerCase();
+        if (typeof bValue === "string") bValue = bValue.toLowerCase();
+
+        return aValue < bValue
+          ? sortConfig.direction === "asc" ? -1 : 1
+          : aValue > bValue
+          ? sortConfig.direction === "asc" ? 1 : -1
+          : 0;
+      });
+    }
+
+    return filtered;
+  }, [bugs, searchQuery, priorityFilter, statusFilter, assignedToFilter, dateFrom, dateTo, sortConfig]);
+
+  // Filter handlers
   const handleResetFilters = () => {
     setSearchQuery("");
     setPriorityFilter("all");
@@ -247,14 +242,26 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
   const handleApplyFilters = () => {
     setPriorityFilter(tempPriorityFilter);
     setStatusFilter(tempStatusFilter);
-    if (showAssignedFilter) setAssignedToFilter(tempAssignedToFilter);
+    if (showAssignedFilter) {
+      setAssignedToFilter(tempAssignedToFilter);
+    }
     setDateFrom(tempDateFrom);
     setDateTo(tempDateTo);
     setShowFilterDialog(false);
     setCurrentPage(1);
   };
 
+  // Download handler
   const handleDownloadReport = async () => {
+    const filterObj = {
+      search: searchQuery || undefined,
+      priority: priorityFilter !== "all" ? priorityFilter : undefined,
+      status: statusFilter !== "all" ? statusFilter : undefined,
+      assignedTo: assignedToFilter !== "all" ? assignedMembersMap[assignedToFilter] : undefined,
+      dateFrom: dateFrom ? format(dateFrom, "yyyy-MM-dd") : undefined,
+      dateTo: dateTo ? format(dateTo, "yyyy-MM-dd") : undefined,
+    };
+
     try {
       if (assignedToFilter !== "all" && assignedMembersMap[assignedToFilter]) {
         await dispatch(
@@ -266,44 +273,65 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
       } else {
         await dispatch(downloadBugsByProjectId(projectId)).unwrap();
       }
-      toast.success("Report downloaded!");
-    } catch {
-      toast.error("No Bug Found");
+      toast.success("Bug report downloaded successfully!");
+    } catch (err) {
+      toast.error(err || "Failed to download report.");
     }
   };
 
-  const onIssueCreated = () => {
-    dispatch(fetchBugByProjectId(projectId));
-    toast.success("Issue created – it will appear in the list shortly.");
-  };
-
-  /* ----------  PAGINATION  ---------- */
+  // Pagination logic
   const totalPages = Math.max(1, Math.ceil(filteredBugs.length / bugsPerPage));
   const paginatedBugs = filteredBugs.slice(
     (currentPage - 1) * bugsPerPage,
     currentPage * bugsPerPage
   );
 
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
   const getPaginationButtons = () => {
     const maxButtons = 8;
     const buttons = [];
     let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
     let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
     if (endPage - startPage + 1 < maxButtons) {
       startPage = Math.max(1, endPage - maxButtons + 1);
     }
-    for (let page = startPage; page <= endPage; page++) buttons.push(page);
+
+    for (let page = startPage; page <= endPage; page++) {
+      buttons.push(page);
+    }
+
     return buttons;
   };
 
-  /* --------------------------------------------------- */
+  const getInitials = (name) => {
+    if (!name) return "N/A";
+    if (name === currentUser?.name && viewMode === "my") return "Me";
+    const words = name.split(" ");
+    return words.length > 1
+      ? `${words[0][0]}${words[1][0]}`.toUpperCase()
+      : name.slice(0, 2).toUpperCase();
+  };
+
+  const truncateTitle = (title) => {
+    if (!title) return "N/A";
+    return title.length > 50 ? `${title.slice(0, 50)}...` : title;
+  };
+
+  // Determine if action column should be shown
+  const showActionColumn = viewMode === "all" && (currentUser?.role === "cpc" || currentUser?.position === "Team Lead" || isTeamLead);
+
   return (
     <TooltipProvider delayDuration={150} skipDelayDuration={0}>
       <div className="w-full bg-white">
         <div className="space-y-2">
-
-          {/* ---------- TOP BAR ---------- */}
-          <div className="flex flex-wrap gap-4 p-4">
+          {/* Search and Controls */}
+          <div className="flex flex-wrap gap-4">
             <div className="flex-1 min-w-[180px]">
               <div className="relative w-full">
                 <Input
@@ -314,7 +342,6 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
                 />
               </div>
             </div>
-
             {showAllViewOption && (
               <div className="flex-1 min-w-[140px]">
                 <Select value={viewMode} onValueChange={setViewMode}>
@@ -328,50 +355,45 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
                 </Select>
               </div>
             )}
-
             <div className="flex-1 min-w-[140px]">
               <Button
                 variant="outline"
-                className="w-full bg-white text-black border-gray-300 hover:bg-gray-100 rounded-lg  text-sm flex items-center justify-center"
+                className="w-full bg-white text-black border-gray-300 hover:bg-gray-100 rounded-lg h-[38px] text-sm flex items-center justify-center"
                 onClick={() => setShowFilterDialog(true)}
               >
-                Apply Filters <Filter className="w-4 h-4 ml-2" />
+                Apply Filters <Filter className="w-4 h-4" />
               </Button>
             </div>
-
             <div className="flex-1 min-w-[140px]">
               <Button
                 variant="outline"
-                className="w-full bg-white text-black border-gray-300 hover:bg-gray-100 rounded-lg text-sm flex items-center justify-center"
+                className="w-full bg-white text-black border-gray-300 hover:bg-gray-100 rounded-lg h-[38px] text-sm flex items-center justify-center"
                 onClick={handleResetFilters}
               >
-                Reset Filters <X className="w-4 h-4 ml-2" />
+                Reset Filters <X className="w-4 h-4" />
               </Button>
             </div>
-
             {showAllViewOption && (
               <div className="flex-1 min-w-[140px]">
                 <Button
                   variant="default"
-                  className="w-full bg-blue-600 text-white hover:bg-blue-700 rounded-lg flex items-center justify-center"
+                  className="w-full bg-blue-600 text-white hover:bg-blue-700 rounded-lg  flex items-center justify-center"
                   onClick={handleDownloadReport}
-                  
+                  disabled={loading.bugDownload || loading.memberBugDownload}
                 >
-                  Download <Download className="w-4 h-4 ml-2" />
+                  Download <Download className="w-4 h-4" />
                 </Button>
               </div>
             )}
-
-            <Button
-              className="bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm flex items-center gap-2"
-              onClick={() => setShowCreateIssue(true)}
-            >
-              <Plus className="h-4 w-4" />
-              Create Issue
-            </Button>
+             <Button
+               
+                  className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-sm"
+                >
+                 Create a Issue
+                </Button>
           </div>
 
-          {/* ---------- FILTER DIALOG ---------- */}
+          {/* Filter Dialog */}
           <Dialog open={showFilterDialog} onOpenChange={setShowFilterDialog}>
             <DialogContent className="max-w-[95vw] sm:max-w-md bg-white shadow-lg border-gray-200 rounded-lg">
               <DialogHeader>
@@ -389,7 +411,6 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
                     <SelectItem value="High">High</SelectItem>
                   </SelectContent>
                 </Select>
-
                 <Select value={tempStatusFilter} onValueChange={setTempStatusFilter}>
                   <SelectTrigger className="w-full bg-white border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 rounded-lg text-sm">
                     <SelectValue placeholder="Status" />
@@ -402,7 +423,6 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
                     <SelectItem value="Completed">Completed</SelectItem>
                   </SelectContent>
                 </Select>
-
                 {showAssignedFilter && (
                   <Select value={tempAssignedToFilter} onValueChange={setTempAssignedToFilter}>
                     <SelectTrigger className="w-full bg-white border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 rounded-lg text-sm">
@@ -410,15 +430,14 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
                     </SelectTrigger>
                     <SelectContent className="bg-white shadow-lg border-gray-200 rounded-lg">
                       <SelectItem value="all">All Assigned</SelectItem>
-                      {(teamMembersByProjectId || []).map((m) => (
-                        <SelectItem key={m.memberId} value={m.memberName}>
-                          {m.memberName}
+                      {assignedMembers.map((name) => (
+                        <SelectItem key={name} value={name}>
+                          {name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 )}
-
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -442,7 +461,6 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
                     />
                   </PopoverContent>
                 </Popover>
-
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -466,18 +484,18 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
                     />
                   </PopoverContent>
                 </Popover>
-
                 <Button
                   onClick={handleApplyFilters}
                   className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-sm"
                 >
                   Apply Filters
                 </Button>
+             
               </div>
             </DialogContent>
           </Dialog>
 
-          {/* ---------- TABLE ---------- */}
+          {/* Table */}
           <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
@@ -513,7 +531,9 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
                   >
                     Status
                   </TableHead>
-                  {showActionColumn && <TableHead className="font-bold text-gray-700 w-[60px]">Action</TableHead>}
+                  {showActionColumn && (
+                    <TableHead className="font-bold text-gray-700 w-[60px]">Action</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -535,7 +555,7 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
                     >
                       <TableCell>{(currentPage - 1) * bugsPerPage + index + 1}</TableCell>
                       <TableCell>
-                        <span className="line-clamp-1">{truncate(bug.title)}</span>
+                        <span className="line-clamp-1">{truncateTitle(bug.title)}</span>
                       </TableCell>
                       <TableCell>
                         <Tooltip>
@@ -545,9 +565,7 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
                             </div>
                           </TooltipTrigger>
                           <TooltipContent className="bg-gradient-to-br from-blue-50 to-indigo-50/80 backdrop-blur-sm border border-blue-100/50 shadow-xl shadow-blue-100/20 max-w-[300px] p-4 rounded-xl">
-                            <p className="text-xs text-gray-700">
-                              {bug?.assignedToDetails?.memberName || "N/A"}
-                            </p>
+                            <p className="text-xs text-gray-700">{bug?.assignedToDetails?.memberName || "N/A"}</p>
                           </TooltipContent>
                         </Tooltip>
                       </TableCell>
@@ -611,7 +629,7 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
             </Table>
           </div>
 
-          {/* ---------- PAGINATION ---------- */}
+          {/* Pagination */}
           <div className="flex flex-col sm:flex-row items-center justify-between px-2 py-4 gap-4 sm:gap-0">
             <div className="text-xs sm:text-sm text-gray-700">
               Showing {Math.min((currentPage - 1) * bugsPerPage + 1, filteredBugs.length)}-
@@ -622,7 +640,7 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
                   className="bg-white text-black border-gray-300 hover:bg-gray-100 rounded-lg text-xs sm:text-sm"
                 >
@@ -633,7 +651,7 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
                     key={page}
                     variant={currentPage === page ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setCurrentPage(page)}
+                    onClick={() => handlePageChange(page)}
                     className={cn(
                       "w-8 h-8 p-0",
                       currentPage === page
@@ -648,7 +666,7 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
                   className="bg-white text-black border-gray-300 hover:bg-gray-100 rounded-lg text-xs sm:text-sm"
                 >
@@ -658,15 +676,7 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
             )}
           </div>
 
-          {/* ---------- CREATE ISSUE MODAL ---------- */}
-          <ReportIssueForm
-            projectData={projectData}
-            isOpen={showCreateIssue}
-            onClose={() => setShowCreateIssue(false)}
-            onIssueReported={onIssueCreated}
-          />
-
-          {/* ---------- VIEW / EDIT MODALS ---------- */}
+          {/* Modals */}
           <BugDetailsViewModal
             isOpen={showViewModal}
             onOpenChange={setShowViewModal}
@@ -686,3 +696,6 @@ const ProjectbugList = ({ projectId, teamLeadId }) => {
 };
 
 export default ProjectbugList;
+
+
+

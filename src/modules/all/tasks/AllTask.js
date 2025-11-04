@@ -397,7 +397,7 @@ export default function AllTask() {
             <NoResults />
           ) : (
             <>
-              <div className="overflow-x-auto rounded-md border">
+              <div className="overflow-x-auto rounded-md border min-h-screen">
                
                 <Table className="w-full table-fixed">
   <TableHeader>

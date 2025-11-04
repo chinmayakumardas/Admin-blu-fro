@@ -266,7 +266,7 @@ export default function ViewProjectById({ projectId }) {
     <div className="min-h-screen bg-gray-50">
       <Card className="shadow-2xl border border-gray-200 mx-auto max-w-full">
         <CardHeader className="border-b border-gray-200 bg-white">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 ">
+          {/* <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 ">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.back()}
@@ -298,7 +298,48 @@ export default function ViewProjectById({ projectId }) {
                 </Button>
               )}
             </div>
-          </div>
+          </div> */}
+          <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
+  {/* Left side: Back + Project name */}
+  <div className="flex items-center min-w-0 gap-2 sm:gap-4">
+    <Button
+      onClick={() => router.back()}
+      className="inline-flex shrink-0 items-center gap-2 bg-blue-600 text-white font-medium text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-md shadow-sm hover:bg-blue-700 transition-colors duration-200"
+    >
+      <FiArrowLeft className="h-4 w-4" />
+      <span className="hidden sm:inline">Back</span>
+    </Button>
+
+    <CardTitle
+      className="truncate text-base sm:text-xl font-semibold text-gray-900 max-w-[150px] sm:max-w-[250px] md:max-w-[400px]"
+      title={project?.data?.projectName || "Unnamed Project"}
+    >
+      {project?.data?.projectName || "Unnamed Project"}
+    </CardTitle>
+  </div>
+
+  {/* Right side: Status + message */}
+  <div className="flex items-center flex-wrap justify-end gap-2 sm:gap-4 mt-2 sm:mt-0">
+    {statusUpdateMessage && (
+      <p
+        className={`text-xs sm:text-sm font-medium ${
+          successMessage ? "text-green-600" : "text-red-600"
+        }`}
+      >
+        {statusUpdateMessage}
+      </p>
+    )}
+    {canEditStatus && (
+      <Button
+        onClick={() => setIsStatusModalOpen(true)}
+        className="bg-blue-600 text-white hover:bg-blue-700 text-xs sm:text-sm px-3 sm:px-4 py-2"
+      >
+        {isProjectActive ? "Update Status" : "Start Project"}
+      </Button>
+    )}
+  </div>
+</div>
+
         </CardHeader>
 
         <CardContent className="p-0">
