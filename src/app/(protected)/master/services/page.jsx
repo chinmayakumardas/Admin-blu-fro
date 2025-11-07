@@ -1,5 +1,5 @@
 
-import Service from "@/modules/master/ServiceMaster";
+import Service from "@/modules/master/components/ServiceMaster";
 
 
 

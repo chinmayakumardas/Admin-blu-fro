@@ -8,6 +8,7 @@ export const useCurrentUser = (projectTeamLeadId = null) => {
 
   const currentUser = {
     id: employeeData?.employeeID || userData?.id || null,
+    employeeId: employeeData?.employeeID || userData?.id || null,
     name: employeeData?.name || userData?.fullName ,
     email: employeeData?.email || userData?.email || "",
     role: employeeData?.role?.toLowerCase() ,

@@ -1,5 +1,5 @@
 
-import SlotMaster from "@/modules/master/SlotMaster";
+import SlotMaster from "@/modules/master/components/SlotMaster";
 
 
 

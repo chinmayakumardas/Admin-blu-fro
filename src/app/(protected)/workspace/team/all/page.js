@@ -1,6 +1,6 @@
 'use client';
 
-import AllTeamList from "@/modules/Teams/AllTeamList";
+import AllTeamList from "@/modules/project-management/team/components/AllTeamList";
 
 
 

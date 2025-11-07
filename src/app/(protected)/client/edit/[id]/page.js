@@ -1,6 +1,6 @@
 'use client';
 
-import UpdateClient from '@/modules/clients/UpdateClient';
+import UpdateClient from '@/modules/client-management/components/UpdateClient';
 
 export default function EditPage({ params }) {
   return (

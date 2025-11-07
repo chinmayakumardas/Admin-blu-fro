@@ -9,7 +9,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight } from "lucide-react";
-import { iconMap } from "@/constants/sidebarNavList";
+import { iconMap } from "@/utils/constants/sidebarNavList";
 
 import {
   Collapsible,

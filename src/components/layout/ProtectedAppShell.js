@@ -12,7 +12,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useRouter, usePathname } from "next/navigation";
 
 import { AppSidebar } from "@/components/layout/app-sidebar";
-import NotificationsPopover from "@/modules/shared/notifications-popover";
+import NotificationsPopover from "@/modules/communication/components/notifications-popover";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
@@ -21,12 +21,12 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { fetchUserByEmail } from "@/features/shared/userSlice";
-import { setSidebarByRole } from "@/features/shared/sidebarSlice";
-import { clearProfileImageUrl, fetchProfileImage } from "@/features/shared/profileSlice";
+import { fetchUserByEmail } from "@/modules/user/slices/userSlice";
+import { setSidebarByRole } from "@/modules/settings/slices/sidebarSlice";
+import { clearProfileImageUrl, fetchProfileImage } from "@/modules/user/slices/profileSlice";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
-import ProfileDropdownContent from "@/modules/shared/ProfileDropdownContent";
+import ProfileDropdownContent from "@/modules/user/components/ProfileDropdownContent";
 
 export default function ProtectedAppShell({ children }) {
   const dispatch = useDispatch();

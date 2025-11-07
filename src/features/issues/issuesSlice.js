@@ -2,18 +2,34 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { axiosInstance } from "@/lib/axios";
 
 // Async thunk for creating an issue with a single file
-export const createIssue = createAsyncThunk(
-  'issues/createIssue',
-  async (issueData, { rejectWithValue }) => {
-    try {
+// export const createIssue = createAsyncThunk(
+//   'issues/createIssue',
+//   async (issueData, { rejectWithValue }) => {
+//     try {
   
 
-      const response = await axiosInstance.post('/bugs/createanybug', issueData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+//       const response = await axiosInstance.post('/bug/createanybug', issueData, {
+//         headers: { 'Content-Type': 'multipart/form-data' },
+//       });
+//       return response.data;
+//     } catch (error) {
+//       return rejectWithValue(error.response?.data || 'Failed to create issue');
+//     }
+//   }
+// );
+export const createIssue = createAsyncThunk(
+  "issues/createIssue",
+  async (issueData, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.post("/bugs/createanybug", issueData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || 'Failed to create issue');
+      console.error("Error creating issue:", error);
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to create issue"
+      );
     }
   }
 );

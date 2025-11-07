@@ -53,11 +53,11 @@ import {
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import ProjectbugList from "../bug/ProjectbugList";
 import Spinner from "@/components/loader/Spinner";
-import ProjectwiseAllMeetingAndMom from "../meetings/project/ProjectwiseAllmeetingMom";
+import ProjectwiseAllMeetingAndMom from "@/modules/meet/components/ProjectwiseAllmeetingMom";
 import { formatDateUTC } from "@/utils/formatDate";
-import DocumentManager from "../document/project-doc/DocumentManager";
+import DocumentManager from "@/modules/document/components/DocumentManager";
 import ProjectMetrics from "./ProjectMetrics";
-import TeamManagement from "../Teams/TeamManagement";
+import TeamManagement from "@/modules/project-management/team/components/TeamManagement";
 import {
   Popover,
   PopoverTrigger,

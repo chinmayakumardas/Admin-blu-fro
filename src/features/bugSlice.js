@@ -2,33 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { axiosInstance } from "@/lib/axios";
 
@@ -36,6 +9,9 @@ import { axiosInstance } from "@/lib/axios";
 // ✅ Initial State
 //
 const initialState = {
+   assignBugLoading: false,
+  assignBugError: null,
+  assignBugSuccess: null,
   bug: null,
   bugs: [],
   allBugs: [],
@@ -332,6 +308,24 @@ export const getBugById = createAsyncThunk(
     }
   }
 );
+export const assignBug = createAsyncThunk(
+  "bugs/assignBug",
+  async ({ bug_id, payload }, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.put(
+        `/bugs/assign/${bug_id}`,
+        payload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error assigning bug:", error);
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to assign bug"
+      );
+    }
+  }
+);
 
 //
 // ✅ Slice
@@ -585,6 +579,21 @@ const bugSlice = createSlice({
         ensureStateIntegrity(state);
         state.loading.bugDetailsFetch = false;
         state.error.bugDetailsFetch = action.payload;
+      })
+      builder
+      .addCase(assignBug.pending, (state) => {
+        state.assignBugLoading = true;
+        state.assignBugError = null;
+        state.assignBugSuccess = null;
+      })
+      .addCase(assignBug.fulfilled, (state, action) => {
+        state.assignBugLoading = false;
+        state.assignBugSuccess =
+          action.payload?.message || "Bug assigned successfully";
+      })
+      .addCase(assignBug.rejected, (state, action) => {
+        state.assignBugLoading = false;
+        state.assignBugError = action.payload;
       });
   },
 });

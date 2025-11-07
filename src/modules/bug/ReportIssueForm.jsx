@@ -1,6 +1,8 @@
 
 
-// export default ReportIssueForm;
+
+
+
 "use client";
 
 import { useState } from "react";
@@ -24,31 +26,25 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { createIssue } from "@/features/issues/issuesSlice";
-import {
-  AlertCircle,
-  FileText,
-  Flag,
-  X,
-  Loader2,
-} from "lucide-react";
+import { FileText, Loader2, Paperclip, X, File, Image as ImageIcon } from "lucide-react";
 
 const ReportIssueForm = ({ onClose, projectData, onIssueReported, isOpen = true }) => {
   const dispatch = useDispatch();
 
-  // 🧠 Local State
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("Medium");
   const [attachment, setAttachment] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // 🧹 Reset form
   const resetForm = () => {
     setTitle("");
     setDescription("");
     setPriority("Medium");
     setAttachment(null);
+    setPreviewUrl(null);
     setErrors({});
   };
 
@@ -62,17 +58,45 @@ const ReportIssueForm = ({ onClose, projectData, onIssueReported, isOpen = true 
     const newErrors = {};
     if (!title.trim()) newErrors.title = "Title is required.";
     if (!description.trim()) newErrors.description = "Description is required.";
-    if (!priority) newErrors.priority = "Please select a priority.";
     if (!projectData?.projectId) newErrors.projectId = "Project ID is required.";
     if (!projectData?.projectName) newErrors.projectName = "Project Name is required.";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // 📤 Submit
+  // 📎 Handle file select and preview
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const allowed = [
+      "application/pdf",
+      "image/jpeg",
+      "image/png",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+
+    if (!allowed.includes(file.type)) {
+      toast.error("Only PDF, JPG, PNG, and DOC/DOCX files are allowed.");
+      return;
+    }
+
+    setAttachment(file);
+
+    // Show preview if image
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onloadend = () => setPreviewUrl(reader.result);
+      reader.readAsDataURL(file);
+    } else {
+      setPreviewUrl(null);
+    }
+  };
+
+  // 🚀 Submit
   const handleSubmit = async () => {
     if (!validateForm()) return;
-
     setIsSubmitting(true);
 
     const formData = new FormData();
@@ -81,7 +105,10 @@ const ReportIssueForm = ({ onClose, projectData, onIssueReported, isOpen = true 
     formData.append("title", title.trim());
     formData.append("description", description.trim());
     formData.append("priority", priority);
-    if (attachment) formData.append("attachment", attachment);
+
+    if (attachment) {
+      formData.append("attachment", attachment);
+    }
 
     try {
       await dispatch(createIssue(formData)).unwrap();
@@ -96,15 +123,13 @@ const ReportIssueForm = ({ onClose, projectData, onIssueReported, isOpen = true 
     }
   };
 
-  const isFormValid = title.trim() && description.trim() && priority && projectData?.projectId && projectData?.projectName;
-  const isDisabled = isSubmitting || !isFormValid;
+  const isDisabled = isSubmitting || !title.trim() || !description.trim();
 
-  // 💎 UI
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="w-full max-w-3xl bg-white border border-gray-200 rounded-xl shadow-lg p-4 sm:p-6">
-        <DialogHeader className="border-b border-gray-100 pb-3 flex items-center justify-between">
-          <DialogTitle className="text-base sm:text-lg font-semibold text-gray-800 flex items-center">
+      <DialogContent className="max-w-3xl bg-white border border-gray-200 rounded-xl shadow-lg p-4 sm:p-6">
+        <DialogHeader className="border-b pb-3">
+          <DialogTitle className="text-lg font-semibold text-gray-800 flex items-center">
             <FileText className="mr-2 h-5 w-5 text-blue-500" /> Report Issue
           </DialogTitle>
         </DialogHeader>
@@ -116,13 +141,10 @@ const ReportIssueForm = ({ onClose, projectData, onIssueReported, isOpen = true 
           }}
           className="space-y-5 mt-4"
         >
-          
-
-          {/* 🧾 Title */}
+          {/* Title */}
           <div>
-            <label className="flex items-center text-sm font-medium mb-2">
-             
-              Title <span className="text-red-500 ml-1">*</span>
+            <label className="text-sm font-medium mb-2 block">
+              Title <span className="text-red-500">*</span>
             </label>
             <Input
               value={title}
@@ -130,24 +152,14 @@ const ReportIssueForm = ({ onClose, projectData, onIssueReported, isOpen = true 
               placeholder="Enter issue title"
               disabled={isSubmitting}
             />
-            {errors.title && (
-              <p className="text-red-500 text-xs mt-1 flex items-center">
-                <X className="h-3 w-3 mr-1" /> {errors.title}
-              </p>
-            )}
           </div>
 
-          {/* 📅 Priority */}
+          {/* Priority */}
           <div>
-            <label className="flex items-center text-sm font-medium mb-2">
-             
-              Priority <span className="text-red-500 ml-1">*</span>
+            <label className="text-sm font-medium mb-2 block">
+              Priority <span className="text-red-500">*</span>
             </label>
-            <Select
-              value={priority}
-              onValueChange={setPriority}
-              disabled={isSubmitting}
-            >
+            <Select value={priority} onValueChange={setPriority} disabled={isSubmitting}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select priority" />
               </SelectTrigger>
@@ -159,10 +171,10 @@ const ReportIssueForm = ({ onClose, projectData, onIssueReported, isOpen = true 
             </Select>
           </div>
 
-          {/* 📝 Description */}
+          {/* Description */}
           <div>
-            <label className="flex items-center text-sm font-medium mb-2">
-              Description <span className="text-red-500 ml-1">*</span>
+            <label className="text-sm font-medium mb-2 block">
+              Description <span className="text-red-500">*</span>
             </label>
             <Textarea
               value={description}
@@ -171,27 +183,60 @@ const ReportIssueForm = ({ onClose, projectData, onIssueReported, isOpen = true 
               className="min-h-[150px]"
               disabled={isSubmitting}
             />
-            {errors.description && (
-              <p className="text-red-500 text-xs mt-1 flex items-center">
-                <X className="h-3 w-3 mr-1" /> {errors.description}
-              </p>
-            )}
           </div>
 
-          {/* 📎 Attachment */}
+          {/* Attachment + Preview */}
           <div>
             <label className="text-sm font-medium mb-2 block">
-              Attachment (optional)
+              Attachment (PDF, JPG, PNG, DOCX)
             </label>
             <Input
               type="file"
-              accept="image/*,application/pdf,.doc,.docx"
-              onChange={(e) => setAttachment(e.target.files[0] || null)}
+              accept=".pdf,image/*,.doc,.docx"
+              onChange={handleFileSelect}
               disabled={isSubmitting}
             />
+
+            {attachment && (
+              <div className="mt-3 p-3 border rounded-lg bg-gray-50 flex items-start justify-between">
+                <div className="flex items-start gap-3">
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="w-16 h-16 object-cover rounded-md border"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center w-16 h-16 border rounded-md bg-white">
+                      {attachment.type === "application/pdf" ? (
+                        <FileText className="text-red-500" size={24} />
+                      ) : (
+                        <File className="text-gray-400" size={24} />
+                      )}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">{attachment.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {(attachment.size / 1024).toFixed(1)} KB
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAttachment(null);
+                    setPreviewUrl(null);
+                  }}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* 🔘 Actions */}
+          {/* Actions */}
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
             <DialogClose asChild>
               <Button type="button" variant="outline" disabled={isSubmitting}>

@@ -1,5 +1,5 @@
 
-import Industry from "@/modules/master/IndustryMaster";
+import Industry from "@/modules/master/components/IndustryMaster";
 
 
 

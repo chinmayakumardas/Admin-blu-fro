@@ -1,149 +1,145 @@
-import { configureStore } from '@reduxjs/toolkit'
+import { configureStore } from "@reduxjs/toolkit";
 
-//1.basic/commom slice
-import sidebarReducer from '@/features/shared/sidebarSlice';
+//1.setting/commom slice
+import sidebarReducer from "@/modules/settings/slices/sidebarSlice";
+//2. Communication
+import notificationReducer from "@/modules/communication/slices/notificationSlice";
 
-import profileReducer from "@/features/shared/profileSlice"
-import authReducer from '@/features/shared/authSlice';
-import notificationReducer from '@/features/shared/notificationSlice';
-import userReducer from '@/features/shared/userSlice';
+//3. Auth & User
+import profileReducer from "@/modules/user/slices/profileSlice";
+import authReducer from "@/modules/auth/slices/authSlice";
+import userReducer from "@/modules/user/slices/userSlice";
 
 //2.dashbaord/overview
-import dashboardReducer from '@/features/dashboard/dashboardSlice';
+import dashboardReducer from "@/modules/dashboard/slices/dashboardSlice";
 
 //3.marketing
-import contactReducer from '@/features/marketing/contactSlice';
+import contactReducer from "@/modules/marketing/slices/contactSlice";
+import MarketingOverviewReducer from "@/modules/marketing/slices/MarketingOverviewSlice";
 
 //4.sales
-import quotationReducer from '@/features/sales/quotationSlice';
-import quotationRequestsReducer from '@/features/sales/quotationRequestSlice';
-import meetReducer from '@/features/meet/meetSlice';
+import quotationReducer from "@/features/sales/quotationSlice";
+import quotationRequestsReducer from "@/features/sales/quotationRequestSlice";
+
+//6. meeting
+import meetReducer from "@/modules/meet/slices/meetSlice";
 
 //5.client
+import clientReducer from "@/modules/client-management/slices/clientSlice";
 
 //6.project management
-import projectReducer from '@/features/projectSlice';
-import teamReducer from '@/features/teamSlice';
-import taskReducer from '@/features/taskSlice';
-import subTaskReducer from '@/features/subTaskSlice';
+import projectReducer from "@/features/projectSlice";
+import teamReducer from "@/features/teamSlice";
+import taskReducer from "@/features/taskSlice";
+import subTaskReducer from "@/features/subTaskSlice";
 
-import bugReducer from '@/features/bugSlice';
-import issuesReducer from '@/features/issues/issuesSlice';
-import documentReducer from '@/features/documentSlice';
+import bugReducer from "@/features/bugSlice";
+import issuesReducer from "@/features/issues/issuesSlice";
+import documentReducer from "@/modules/document/slices/documentSlice";
 
-import teamMembersReducer from '@/features/teamMembersSlice';
-import viewTeamByProjectIdReducer from '@/features/viewTeamByProjectIdSlice';
-
-
-
+import teamMembersReducer from "@/features/teamMembersSlice";
+import viewTeamByProjectIdReducer from "@/features/viewTeamByProjectIdSlice";
 
 // module reducer
-import meetingReducer from '@/features/meetingSlice';
-import teammeetingMomReducer from '@/features/calender/teammeetingMomSlice';
-import meetingCalendarReducer from '@/features/calender/meetingCalendarSlice';
-import teamMeetingsReducer from '@/features/calender/teammeetingCalenderSlice';
-import momReducer from '@/features/momSlice';
-import clientReducer from '@/features/clientSlice';
-import causeReducer from '@/features/causeSlice';
+import meetingReducer from "@/features/meetingSlice";
+import teammeetingMomReducer from "@/features/calender/teammeetingMomSlice";
+import meetingCalendarReducer from "@/features/calender/meetingCalendarSlice";
+import teamMeetingsReducer from "@/features/calender/teammeetingCalenderSlice";
+import momReducer from "@/features/momSlice";
+import causeReducer from "@/features/causeSlice";
 import projectAnalyticsReducer from "@/features/projectAnalyticsSlice";
 
-
 //master table
-import slotReducer from '@/features/master/slotMasterSlice';
-import serviceReducer from '@/features/master/serviceMasterSlice';
-import industriesReducer from '@/features/master/industriesMasterSlice';
+import slotReducer from "@/modules/master/slices/slotMasterSlice";
+import serviceReducer from "@/modules/master/slices/serviceMasterSlice";
+import industriesReducer from "@/modules/master/slices/industriesMasterSlice";
 
-
-
-
-
-
-
-
-import projectMeetingMomReducer from '@/features/projectmeetingmomSlice'; // Adjust path as needed
-import projectShowCauseReducer from '@/features/projectShowCauseSlice';
+import projectMeetingMomReducer from "@/features/projectmeetingmomSlice"; // Adjust path as needed
+import projectShowCauseReducer from "@/features/projectShowCauseSlice";
 const initialState = {
   initialized: false,
   loading: false,
-  error: null
+  error: null,
 };
 
 export const store = configureStore({
   reducer: {
     app: (state = initialState, action) => {
       switch (action.type) {
-        case 'app/initialize':
+        case "app/initialize":
           return { ...state, initialized: true };
-        case 'app/setLoading':
+        case "app/setLoading":
           return { ...state, loading: action.payload };
-        case 'app/setError':
+        case "app/setError":
           return { ...state, error: action.payload };
         default:
           return state;
       }
     },
-    sidebar:sidebarReducer,
-  //shared reducers
-  auth: authReducer,
-  notifications: notificationReducer,
-  user: userReducer,
-
+    //shared reducers
+    sidebar: sidebarReducer,
+    //setting
+    profile: profileReducer,
+    auth: authReducer,
+    notifications: notificationReducer,
+    user: userReducer,
 
     //dashboard
+    dashboard: dashboardReducer,
 
-  dashboard:dashboardReducer,
-  projectAnalytics: projectAnalyticsReducer,
-meet:meetReducer,
-  // module reducer
- contact: contactReducer,
-  meetings: meetingReducer,
-  meetingCalendar: meetingCalendarReducer,
-  mom: momReducer,
-  //sales
-  quotation : quotationReducer,
-  quotationRequests:quotationRequestsReducer,
-  client:clientReducer,
-  project:projectReducer,
-  task:taskReducer,
-  subTask:subTaskReducer,
-  team: teamReducer,
-  bugs: bugReducer,
-  issues: issuesReducer,
-  cause: causeReducer,
- 
+    //marketing phase
+    marketingOverview: MarketingOverviewReducer,
+    contact: contactReducer,
 
-  documents: documentReducer,
-  profile: profileReducer,
+    //sales & Meet phase
+    quotation: quotationReducer,
+    quotationRequests: quotationRequestsReducer,
+    meet: meetReducer,
 
-  //master
-  slots: slotReducer,
-  services: serviceReducer,
-  industries:industriesReducer,
+    // module reducer
+    meetings: meetingReducer,
+    meetingCalendar: meetingCalendarReducer,
+    mom: momReducer,
 
-  teamMeetings:teamMeetingsReducer,
-teammeetingMom:teammeetingMomReducer,
+    client: clientReducer,
+    project: projectReducer,
+    task: taskReducer,
+    subTask: subTaskReducer,
+    team: teamReducer,
+    bugs: bugReducer,
+    issues: issuesReducer,
+    cause: causeReducer,
+
+    projectAnalytics: projectAnalyticsReducer,
+
+    //master
+    slots: slotReducer,
+    services: serviceReducer,
+    industries: industriesReducer,
+
+    //document
+    documents: documentReducer,
+
+    
+    teamMeetings: teamMeetingsReducer,
+    teammeetingMom: teammeetingMomReducer,
     teamMembers: teamMembersReducer,
-  projectTeam: viewTeamByProjectIdReducer,
+    projectTeam: viewTeamByProjectIdReducer,
 
-  
+    //project meeting
 
+    projectMeetingMom: projectMeetingMomReducer,
 
-
-  //project meeting
- 
-     projectMeetingMom: projectMeetingMomReducer,
-  
-
-     //
-     projectShowCause: projectShowCauseReducer
+    //
+    projectShowCause: projectShowCauseReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,
-    })
+    }),
 });
 
 // Initialize store
-store.dispatch({ type: 'app/initialize' });
+store.dispatch({ type: "app/initialize" });
 
 export default store;

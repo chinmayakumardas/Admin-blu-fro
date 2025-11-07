@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { refreshToken } from '@/features/shared/authSlice';
+import { refreshToken } from '@/modules/auth/slices/authSlice';
 
 // Remove store import and add getStore function
 let storeInstance = null;

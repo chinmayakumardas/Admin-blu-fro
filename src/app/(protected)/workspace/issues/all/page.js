@@ -1,5 +1,5 @@
 
-import AllIssuesList from "@/modules/all/issues/AllIssuesList";
+import AllIssuesList from "@/modules/project-management/issues/components/AllIssuesList";
 
 export default function Page() {
 

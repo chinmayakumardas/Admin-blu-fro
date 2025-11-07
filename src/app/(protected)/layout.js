@@ -1,20 +1,3 @@
-// import ProtectedAppShell from "@/components/layout/ProtectedAppShell";
-
-// // app/(protected)/layout.jsx
-// export default function ProtectedLayout({ children }) {
-//   return (
-//     <>
-//    {/* ✅ You can add Sidebar/Header here */}
-//      <ProtectedAppShell>
-//       {
-//         children
-//       }
-//      </ProtectedAppShell>
-    
-//     </>
-//   );
-// }
-
 
 
 
@@ -24,7 +7,7 @@
 import { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
-import { checkAuth } from '@/features/shared/authSlice';
+import { checkAuth } from '@/modules/auth/slices/authSlice';
 import ProtectedAppShell from '@/components/layout/ProtectedAppShell';
 
 export default function ProtectedLayout({ children }) {

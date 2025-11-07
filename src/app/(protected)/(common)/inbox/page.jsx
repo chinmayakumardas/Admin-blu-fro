@@ -1,6 +1,6 @@
 'use client';
 
-import Inbox from "@/modules/shared/inbox";
+import Inbox from "@/modules/communication/components/inbox";
 
 
 

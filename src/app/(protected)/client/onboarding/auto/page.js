@@ -3,7 +3,7 @@
 'use client';
 
 import React, { Suspense } from 'react';
-import AutoOnbardingClient from '@/modules/clients/ClientAutoOnboarding';
+import AutoOnbardingClient from '@/modules/client-management/components/ClientAutoOnboarding';
 import { useSearchParams } from 'next/navigation';
 
 function OnboardingInnerContent() {
