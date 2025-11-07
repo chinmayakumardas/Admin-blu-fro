@@ -228,9 +228,10 @@ export default function Industry() {
 
       {/* Table */}
       <div className="bg-card rounded-lg border overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+        <div className="overflow-x-auto min-h-[65vh]">
+          <Table className="">
+            <TableHeader className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white">
+            {/* <TableHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white"> */}
               <TableRow>
                 <TableHead className="text-center w-20 text-white">S.No.</TableHead>
                 <TableHead

@@ -203,9 +203,10 @@ export default function SlotMaster() {
 
       {/* Table */}
       <div className="bg-card rounded-lg border overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto min-h-[65vh]">
           <Table>
-            <TableHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+            <TableHeader className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white">
+            {/* <TableHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white"> */}
               <TableRow>
                 <TableHead className="text-center  text-white  w-20">S.No.</TableHead>
                 <TableHead className="text-center text-white ">Start Time</TableHead>

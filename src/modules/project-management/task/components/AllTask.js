@@ -11,7 +11,7 @@ import {
   getAllTaskList,
   selectAllTaskList,
   selectTaskStatus,
-} from '@/features/taskSlice';
+} from '@/modules/project-management/task/slices/taskSlice';
 import {
   Bug as BugIcon,
   Loader2,

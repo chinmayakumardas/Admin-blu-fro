@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { FiTrash } from "react-icons/fi";
-import { deleteTeam } from "@/features/teamSlice"; // Assuming deleteTeam action exists
+import { deleteTeam } from "@/modules/project-management/team/slices/teamSlice"; // Assuming deleteTeam action exists
 
 export default function DeleteTeamModal({ teamId, onClose }) {
   const dispatch = useDispatch();

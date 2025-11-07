@@ -21,9 +21,9 @@ import { LucideCalendar } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { formatDateUTC } from '@/utils/formatDate';
 import { fetchTasksByDeadline } from '@/modules/dashboard/slices/dashboardSlice';
-import { fetchAllProjects } from '@/features/projectSlice';
-import { fetchAllTeams } from '@/features/teamSlice';
-import { getAllTaskList } from '@/features/taskSlice';
+import { fetchAllProjects } from '@/modules/project-management/project/slices/projectSlice';
+import { fetchAllTeams } from '@/modules/project-management/team/slices/teamSlice';
+import { getAllTaskList } from '@/modules/project-management/task/slices/taskSlice';
 import { fetchClients } from '@/modules/client-management/slices/clientSlice';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 

@@ -1,4 +1,4 @@
-import MomDashboardList from "@/modules/meetings/mom/momdashboardList";
+import MomDashboardList from "@/modules/meetings(deleted-soon)/mom/momdashboardList";
 
 
 export default function Page() {

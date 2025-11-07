@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchAllProjects, deleteProject } from '@/features/projectSlice';
+import { fetchAllProjects, deleteProject } from '@/modules/project-management/project/slices/projectSlice';
 import { useRouter } from 'next/navigation';
 import {
   FiPaperclip,

@@ -51,6 +51,8 @@ const SALES_BASE = "/sales";
 const FINANCE_BASE = "/finance";
 const REPORTS_BASE = "/reports";
 const MASTER_BASE = "/master";
+const CLIENT_BASE = "/client";
+const ESCALATION_BASE = "/escalation";
 
 // 🧭 Unified Navigation
 export const fullNav = [
@@ -69,7 +71,7 @@ export const fullNav = [
     roles: ["cpcGroup", "employeeGroup"],
   },
   // {
-  //   title: "Planner",
+  //   title: "Calendar",
   //   url: "/calendar",
   //   icon: "CalendarDays",
   //   alias: "planner",
@@ -115,38 +117,31 @@ export const fullNav = [
   },
 
   // 📣 Marketing
-  // {
-  //   title: "Marketing",
-  //   icon: "FileText",
-  //   alias: "marketing-root",
-  //   roles: ["cpcGroup"],
-  //   items: withBase(MARKETING_BASE, [
-  //     { title: "Contacts", path: "contacts", alias: "marketing-campaigns-all", roles: ["cpcGroup", "employeeGroup"] },
-  //     // { title: "Lead Contacts", path: "contacts/all-contacts", alias: "marketing-contacts-all", roles: ["cpcGroup", "employeeGroup"] },
-  //   ]),
-  // },
   {
-   title: "Contacts ",
+   title: "Contacts",
    url: "#",
    icon: "Inbox",
    roles: ["cpcGroup"],
-   items: [
-     { title: "Overview", url: "/marketing/contacts/overview", roles: ["cpcGroup", "employeeGroup"] },
-     { title: "Recent Inquiry", url: "/marketing/contacts/recent", roles: ["cpcGroup", "employeeGroup"] },
-     { title: "Follow-Up Action", url: "/marketing/contacts/follow-ups", roles: ["cpcGroup", "employeeGroup"] },
-     { title: "All Inquiry", url: "/marketing/contacts/all", roles: ["cpcGroup", "employeeGroup"] },
-     { title: "Reports", url: "/marketing/reports", roles: ["cpcGroup", "employeeGroup"] },
-   ],
+   items: withBase(MARKETING_BASE,[
+     { title: "Overview", path: "contacts/overview", roles: ["cpcGroup", "employeeGroup"] },
+     { title: "Recent Inquiry", path: "contacts/recent", roles: ["cpcGroup", "employeeGroup"] },
+     { title: "Follow-Up Action", path: "contacts/follow-ups", roles: ["cpcGroup", "employeeGroup"] },
+     { title: "All Inquiry", path: "contacts/all", roles: ["cpcGroup", "employeeGroup"] },
+    //  { title: "Reports", path: "/contacts/reports", roles: ["cpcGroup", "employeeGroup"] },
+   ]),
  },
-  {
+
+   {
    title: "Client",
    url: "#",
    icon: "Inbox",
    roles: ["cpcGroup"],
-   items: [
-     { title: "All Clients", url: "/client", roles: ["cpcGroup", "employeeGroup"] },
-    
-   ],
+   items: withBase(CLIENT_BASE,[
+     { title: "All Clients", path: "all", roles: ["cpcGroup", "employeeGroup"] },
+     { title: "Onboarding", path: "onboarding", roles: ["cpcGroup", "employeeGroup"] },
+
+   
+   ]),
  },
   // // 💰 Sales
   // {
@@ -183,6 +178,17 @@ export const fullNav = [
  },
 
 
+  // ⚙️ Master Data
+  {
+    title: "Escalation",
+    icon: "FolderClosed",
+    alias: "master-root",
+    roles: ["cpcGroup"],
+    items: withBase(ESCALATION_BASE, [
+      { title: "Show cause", path: "show-cause", alias: "show-cause", roles: ["cpcGroup"] },
+      
+    ]),
+  },
   // ⚙️ Master Data
   {
     title: "Master",

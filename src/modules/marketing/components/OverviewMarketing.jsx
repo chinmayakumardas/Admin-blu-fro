@@ -371,7 +371,7 @@ export default function MarketingOverview() {
 
   return (
     <Tooltip.Provider>
-      <div className="min-h-screen p-4 sm:p-6 md:p-8 bg-gray-50">
+      <div className="min-h-screen  bg-gray-50">
         <Card className="overflow-hidden shadow-lg border-0 bg-white">
           <div className="bg-gradient-to-r from-teal-600 to-cyan-500 text-white p-6 sm:p-8">
             <div className="flex justify-between items-center">

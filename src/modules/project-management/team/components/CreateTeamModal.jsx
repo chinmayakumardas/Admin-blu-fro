@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchTeamMembers, createTeam } from "@/features/teamSlice";
+import { fetchTeamMembers, createTeam } from "@/modules/project-management/team/slices/teamSlice";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Users, Check, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { fetchTeamByProjectId } from "@/features/viewTeamByProjectIdSlice";
+import { fetchTeamByProjectId } from "@/modules/project-management/team/slices/viewTeamByProjectIdSlice";
 
 export default function CreateTeamModal({ projectId, onClose, isOpen }) {
   const dispatch = useDispatch();

@@ -1,6 +1,6 @@
 "use client";
 
-import QuotationList from "@/modules/sales/quotation/quotationRequest";
+import QuotationList from "@/modules/sales/components/quotationRequest";
 
 
 

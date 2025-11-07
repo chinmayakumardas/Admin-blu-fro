@@ -1,4 +1,4 @@
-import CauseDashboard from "@/modules/cause/causeDashboard";
+import CauseDashboard from "@/modules/escalation/components/causeDashboard";
 
 
 export default function Page() {

@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchAllBugs } from "@/features/bugSlice";
+import { fetchAllBugs } from "@/modules/project-management/issues/slices/bugSlice";
 import {
   Bug as BugIcon,
   Loader2,

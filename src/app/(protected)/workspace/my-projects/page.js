@@ -2,7 +2,7 @@
 'use client';
 
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import MyProjectList from '@/modules/project/MyProjectList';
+import MyProjectList from '@/modules/project-management/project/components/MyProjectList';
 
 export default function Page() {
   const { currentUser } = useCurrentUser();

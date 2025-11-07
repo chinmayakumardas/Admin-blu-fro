@@ -1,6 +1,6 @@
 "use client";
 
-import SubTaskFullDetailsPage from "@/modules/Tasks/sub-task/SubTaskFullDetailsPage";
+import SubTaskFullDetailsPage from "@/modules/project-management/task/components/sub-task/SubTaskFullDetailsPage";
 import { useParams } from "next/navigation";
 
 export default function Page() {

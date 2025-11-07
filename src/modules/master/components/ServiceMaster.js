@@ -185,7 +185,7 @@ export default function Service() {
   };
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
+    <div className="space-y-6 ">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold">Services</h1>
@@ -263,9 +263,10 @@ export default function Service() {
 
       {/* Table */}
       <div className="bg-card rounded-lg border overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto min-h-[65vh]">
           <Table>
-            <TableHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+            <TableHeader className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white">
+            {/* <TableHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white"> */}
               <TableRow>
                 <TableHead className="text-center text-white w-16 sm:w-20">
                   S.No.

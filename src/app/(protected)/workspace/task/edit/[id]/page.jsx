@@ -1,4 +1,4 @@
-import EditTask from "@/modules/Tasks/task/EditTask";
+import EditTask from "@/modules/project-management/task/components/EditTask";
 
 export default function Page({ params }) {
   const task_id = params.id;

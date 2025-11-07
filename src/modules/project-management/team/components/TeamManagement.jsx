@@ -6,7 +6,7 @@ import { FiUsers, FiPlus } from "react-icons/fi";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { fetchTeamByProjectId } from "@/features/teamSlice";
+import { fetchTeamByProjectId } from "@/modules/project-management/team/slices/teamSlice";
 import CreateTeamModal from "./CreateTeamModal";
 import EditTeamModal from "./EditTeamModal";
 import DeleteTeamModal from "./DeleteTeamModal";

@@ -5,7 +5,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchTeamsByEmployeeId } from '@/features/teamSlice';
+import { fetchTeamsByEmployeeId } from '@/modules/project-management/team/slices/teamSlice';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {

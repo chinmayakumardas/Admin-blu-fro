@@ -617,7 +617,7 @@ export default function RecentContactsList() {
                             }
                           >
                             <div className="flex items-center justify-between">
-                              Full Name
+                              Contact Person
                               <ArrowUpDown
                                 className="h-4 w-4 text-teal-600 ml-2"
                                 aria-hidden="true"

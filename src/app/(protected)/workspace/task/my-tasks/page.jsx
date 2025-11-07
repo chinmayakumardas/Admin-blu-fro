@@ -1,6 +1,6 @@
 'use client';
 
-import EmployeeTaskList from '@/modules/Tasks/task/EmployeeTaskList';
+import EmployeeTaskList from '@/modules/project-management/task/components/EmployeeTaskList';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 

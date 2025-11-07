@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { updateTeam } from '@/features/teamMembersSlice';
-import { fetchTeamDetails, fetchTeamMembers } from "@/features/teamSlice";
-import { fetchTeamByProjectId } from "@/features/viewTeamByProjectIdSlice";
+import { updateTeam } from '@/modules/project-management/team/slices/teamMembersSlice';
+import { fetchTeamDetails, fetchTeamMembers } from "@/modules/project-management/team/slices/teamSlice";
+import { fetchTeamByProjectId } from "@/modules/project-management/team/slices/viewTeamByProjectIdSlice";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

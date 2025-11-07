@@ -3,7 +3,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import EditQuotationForm from "@/modules/sales//QuotationEditForm";
+import EditQuotationForm from "@/modules/sales/components/QuotationEditForm";
 
 export default function Page() {
   const params = useParams();

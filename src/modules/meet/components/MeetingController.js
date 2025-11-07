@@ -48,7 +48,7 @@ import {
   updateMeetingStatus,
   clearSelectedMeeting,
   clearError,
-} from "@/features/meet/meetSlice";
+} from "@/modules/meet/slices/meetSlice";
 
 // Placeholder MOM and Quotation data
 const initialMomData = {

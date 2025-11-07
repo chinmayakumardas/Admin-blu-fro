@@ -5,7 +5,7 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchAllTeams } from "@/features/teamSlice";
+import { fetchAllTeams } from "@/modules/project-management/team/slices/teamSlice";
 import { FiSearch, FiArrowUp, FiArrowDown, FiX, FiChevronLeft, FiChevronRight, FiUsers, FiAlertCircle, FiMail, FiUser, FiBriefcase, FiFilter, FiChevronDown } from "react-icons/fi";
 import { Users, Briefcase, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";

@@ -1,324 +1,602 @@
 
-
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { useDispatch, useSelector } from "react-redux";
 import DOMPurify from "dompurify";
-import { format } from "date-fns";
-
-import { ArrowLeft, X, UploadCloud, FileText, FileImage, File } from "lucide-react";
+import { toast } from "sonner";
+import { FiGlobe, FiUpload, FiX, FiEye, FiCheck, FiFileText } from "react-icons/fi";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 
-import {
-  addClient,
-  updateFormData,
-  addFile,
-  removeFile,
-  resetForm,
-} from "@/modules/client-management/slices/clientSlice";
+import { addClient } from "@/modules/client-management/slices/clientSlice";
 import { fetchIndustries } from "@/modules/master/slices/industriesMasterSlice";
 
+const countries = [
+  { name: "India", code: "+91" },
+  { name: "United States", code: "+1" },
+  { name: "United Kingdom", code: "+44" },
+  { name: "Canada", code: "+1" },
+  { name: "Australia", code: "+61" },
+  { name: "Germany", code: "+49" },
+  { name: "France", code: "+33" },
+  { name: "UAE", code: "+971" },
+  { name: "Singapore", code: "+65" },
+  { name: "Japan", code: "+81" },
+  { name: "Saudi Arabia", code: "+966" },
+  { name: "South Africa", code: "+27" },
+  { name: "Brazil", code: "+55" },
+  { name: "Mexico", code: "+52" },
+  { name: "Russia", code: "+7" },
+  { name: "China", code: "+86" },
+  { name: "Indonesia", code: "+62" },
+  { name: "Pakistan", code: "+92" },
+  { name: "Nigeria", code: "+234" },
+  { name: "Bangladesh", code: "+880" },
+];
+
+const sanitize = (str) => DOMPurify.sanitize(String(str || "").trim());
+const validateEmail = (email) => /^\S+@\S+\.\S+$/.test(email);
+const validatePhone = (phone) => /^\+\d{1,4}\s\d{5}\s\d{5}$/.test(phone);
+const validateWebsite = (url) => !url || /^https?:\/\/.+/i.test(url);
+
+const getTodayDate = () => {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 export default function AddClient() {
-  const dispatch = useDispatch();
   const router = useRouter();
+  const dispatch = useDispatch();
+  const { industries } = useSelector((state) => state.industries);
 
-  const { formData, addLoading } = useSelector((state) => state.client);
-  const { industries, loading: industriesLoading } = useSelector((state) => state.industries);
-
+  const formRef = useRef(null);
   const fileInputRef = useRef(null);
-  const dropZoneRef = useRef(null);
-  const [errors, setErrors] = useState({});
-  const [calendarOpen, setCalendarOpen] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(null);
+  const countryRef = useRef(null);
+  const industryRef = useRef(null);
 
-  // Clear form on component mount
+  const [formData, setFormData] = useState({
+    clientName: "",
+    industryType: "",
+    contactPersonName: "",
+    contactEmail: "",
+    contactNo: "+91 ",
+    country: "India",
+    website: "",
+    address: "",
+    fileData: [],
+    onboardingDate: getTodayDate(),
+  });
+
+  const [errors, setErrors] = useState({});
+  const [dragActive, setDragActive] = useState(false);
+  const [isCountryOpen, setIsCountryOpen] = useState(false);
+  const [isIndustryOpen, setIsIndustryOpen] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState(countries[0]);
+  const [phoneInput, setPhoneInput] = useState("");
+  const [uploadProgress, setUploadProgress] = useState({});
+  const [previewFile, setPreviewFile] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Local loading state
+
   useEffect(() => {
-    dispatch(resetForm());
-    setSelectedDate(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    dispatch(fetchIndustries());
   }, [dispatch]);
 
-  const validate = (name, value) => {
-    const val = DOMPurify.sanitize(value);
-    const err = {
-      website: val && !val.match(/^https?:\/\/.+\..+$/) && "Invalid URL",
-      contactEmail: !val.match(/^\S+@\S+\.\S+$/) && "Invalid email",
-      contactNo: !val.match(/^[\d\s+-]{7,15}$/) && "Invalid phone",
-      address: val.length < 5 && "Too short",
-      clientName: val.length < 2 && "Too short",
-      industryType: val.length < 2 && "Required",
-      contactPersonName: val.length < 2 && "Too short",
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (countryRef.current && !countryRef.current.contains(e.target)) setIsCountryOpen(false);
+      if (industryRef.current && !industryRef.current.contains(e.target)) setIsIndustryOpen(false);
+      if (formRef.current && !formRef.current.contains(e.target)) setPreviewFile(null);
     };
-    return err[name] || "";
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const isFormFilled = () => {
+    return (
+      formData.clientName.trim() &&
+      formData.industryType &&
+      formData.contactPersonName.trim() &&
+      formData.contactEmail.trim() &&
+      formData.contactNo.trim().length > 5 &&
+      formData.address.trim()
+    );
   };
 
   const handleChange = (e) => {
-    const { name, value, files } = e.target;
-    if (name === "fileData") return handleFiles(files);
-    dispatch(updateFormData({ [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: validate(name, value) }));
+    const { name, value } = e.target;
+    let cleanValue = sanitize(value);
+
+    if (name === "website") {
+      cleanValue = cleanValue.replace(/^https?:\/\//i, "");
+      if (cleanValue && !/^https?:\/\//i.test(cleanValue)) cleanValue = "https://" + cleanValue;
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: cleanValue }));
   };
 
-  const handleFiles = (files) => {
-    // const validTypes = [
-    //   "application/pdf",
-    //   "application/msword",
-    //   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    //   "image/jpeg",
-    //   "image/png",
-    // ];
+  const handlePhoneChange = (e) => {
+    let digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+    setPhoneInput(digits);
+    const formatted = digits
+      ? `${selectedCountry.code} ${digits.replace(/(\d{5})(\d{5})/, "$1 $2")}`
+      : `${selectedCountry.code} `;
+    setFormData((prev) => ({ ...prev, contactNo: formatted }));
+  };
 
-    const validTypes = [
-  "application/pdf", // PDF
-  "application/msword", // .doc
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
-  "application/vnd.ms-excel", // .xls
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
-  "text/plain", // .txt
-  "image/jpeg", // .jpeg, .jpg
-  "image/png", // .png
-];
+  const handleCountrySelect = (country) => {
+    setSelectedCountry(country);
+    setFormData((prev) => ({ ...prev, country: country.name }));
+    const digits = phoneInput;
+    const formatted = digits
+      ? `${country.code} ${digits.replace(/(\d{5})(\d{5})/, "$1 $2")}`
+      : `${country.code} `;
+    setFormData((prev) => ({ ...prev, contactNo: formatted }));
+    setIsCountryOpen(false);
+  };
 
-    Array.from(files).forEach((file) => {
-      if (!validTypes.includes(file.type)) {
-        setErrors((e) => ({ ...e, fileData: "Invalid file type" }));
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        setErrors((e) => ({ ...e, fileData: "Max size 5MB" }));
-        return;
-      }
-      dispatch(addFile({ name: file.name, size: file.size, type: file.type, data: file, isNew: true }));
-    });
+  const handleIndustrySelect = (industry) => {
+    setFormData((prev) => ({ ...prev, industryType: industry }));
+    setIsIndustryOpen(false);
+  };
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(e.type === "dragenter" || e.type === "dragover");
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFiles(e.dataTransfer.files);
+    if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files);
+  };
+
+  const handleFiles = (files) => {
+    const newFiles = Array.from(files);
+    const validFiles = [];
+    const allowed = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "image/jpeg",
+      "image/png",
+    ];
+    const maxSize = 5 * 1024 * 1024;
+
+    newFiles.forEach((file) => {
+      if (!allowed.includes(file.type)) {
+        toast.error(`${file.name}: Invalid file type`);
+      } else if (file.size > maxSize) {
+        toast.error(`${file.name}: File too large (max 5MB)`);
+      } else {
+        validFiles.push(file);
+        setUploadProgress((prev) => ({ ...prev, [file.name]: 0 }));
+        simulateUpload(file.name);
+      }
+    });
+
+    if (validFiles.length) {
+      setFormData((prev) => ({
+        ...prev,
+        fileData: [...prev.fileData, ...validFiles],
+      }));
+      toast.success(`${validFiles.length} file(s) added`);
     }
   };
 
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") setDragActive(true);
-    else if (e.type === "dragleave") setDragActive(false);
+  const simulateUpload = (name) => {
+    let p = 0;
+    const int = setInterval(() => {
+      p += 25;
+      setUploadProgress((prev) => ({ ...prev, [name]: p }));
+      if (p >= 100) {
+        clearInterval(int);
+        setTimeout(
+          () =>
+            setUploadProgress((prev) => {
+              const { [name]: _, ...rest } = prev;
+              return rest;
+            }),
+          600
+        );
+      }
+    }, 150);
   };
 
+  const removeFile = (i) => {
+    setFormData((prev) => ({
+      ...prev,
+      fileData: prev.fileData.filter((_, idx) => idx !== i),
+    }));
+  };
+
+  const viewFile = (file) => {
+    const url = URL.createObjectURL(file);
+    setPreviewFile({ url, name: file.name, type: file.type });
+  };
+
+  const closePreview = () => {
+    if (previewFile?.url) URL.revokeObjectURL(previewFile.url);
+    setPreviewFile(null);
+  };
+
+  // MAIN SUBMIT HANDLER – FULLY INDEPENDENT
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const errMap = {};
-    Object.entries(formData).forEach(([k, v]) => {
-      if (k !== "fileData") errMap[k] = validate(k, v);
-    });
-    const hasErrors = Object.values(errMap).some(Boolean);
-    setErrors(errMap);
-    if (hasErrors) return;
+    setErrors({});
+
+    // Validation
+    const newErrors = {};
+    const name = sanitize(formData.clientName);
+    const person = sanitize(formData.contactPersonName);
+    const email = sanitize(formData.contactEmail);
+    const address = sanitize(formData.address);
+    const website = formData.website || "";
+
+    if (!name || name.length < 2) newErrors.clientName = "Minimum 2 characters";
+    if (!formData.industryType) newErrors.industryType = "Required";
+    if (!person || person.length < 2) newErrors.contactPersonName = "Minimum 2 characters";
+    if (!email || !validateEmail(email)) newErrors.contactEmail = "Invalid email";
+    if (!validatePhone(formData.contactNo)) newErrors.contactNo = "Enter 10-digit number";
+    if (website && !validateWebsite(website)) newErrors.website = "Must start with http:// or https://";
+    if (!address || address.length < 10) newErrors.address = "Address too short";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast.error("Please fix all errors");
+      return;
+    }
+
+    setIsSubmitting(true);
+    toast.loading("Onboarding client...", { id: "submit-toast" });
 
     const payload = new FormData();
     Object.entries(formData).forEach(([k, v]) => {
-      if (k === "fileData" && Array.isArray(v)) {
-        v.forEach((f) => f.data && payload.append("fileData", f.data));
-      } else if (v) {
-        payload.append(k, v);
-      }
+      if (k === "fileData") v.forEach((f) => payload.append("fileData", f));
+      else if (v) payload.append(k, v);
     });
-
-    if (selectedDate) {
-      payload.append("onboardingDate", selectedDate.toISOString());
-    }
+    payload.set("onboardingDate", getTodayDate());
 
     try {
       await dispatch(addClient(payload)).unwrap();
-      dispatch(resetForm());
-      setSelectedDate(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-      toast.success("Client Onboarded");
-      router.push("/client");
-    } catch {
-      toast.error("Submission failed");
+
+      toast.success("Client onboarded successfully!", { id: "submit-toast" });
+
+      // Reset form completely
+      setFormData({
+        clientName: "",
+        industryType: "",
+        contactPersonName: "",
+        contactEmail: "",
+        contactNo: "+91 ",
+        country: "India",
+        website: "",
+        address: "",
+        fileData: [],
+        onboardingDate: getTodayDate(),
+      });
+      setPhoneInput("");
+      setSelectedCountry(countries[0]);
+      setErrors({});
+      setUploadProgress({});
+      setPreviewFile(null);
+
+      // Redirect
+      router.push("/client/all");
+    } catch (err) {
+      const msg = err?.message || err?.data?.message || "Failed to onboard client";
+      toast.error(msg, { id: "submit-toast" });
+      console.error("Add client error:", err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  useEffect(() => {
-    dispatch(fetchIndustries());
-  }, [dispatch]);
-
   const getFileIcon = (type) => {
-    if (type.includes("pdf")) return <FileText className="w-4 h-4 text-red-500" />;
-    if (type.includes("image")) return <FileImage className="w-4 h-4 text-green-500" />;
-    if (type.includes("word")) return <FileText className="w-4 h-4 text-blue-500" />;
-    return <File className="w-4 h-4 text-gray-500" />;
+    if (type.includes("pdf")) return <FiFileText className="w-5 h-5 text-red-600" />;
+    if (type.includes("image")) return <FiFileText className="w-5 h-5 text-green-600" />;
+    if (type.includes("word")) return <FiFileText className="w-5 h-5 text-blue-600" />;
+    return <FiFileText className="w-5 h-5 text-gray-600" />;
   };
 
   return (
-    <Card className="border border-gray-200 bg-white shadow-xl">
-      <CardHeader className="border-b border-gray-100">
-        <div className="flex items-center justify-between w-full">
-          <button
-            onClick={() => router.back()}
-            className="inline-flex cursor-pointer items-center gap-2 bg-blue-700 text-white font-medium text-sm px-4 py-2 rounded-full shadow-md hover:bg-blue-800 hover:shadow-lg transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            Back
-          </button>
-          <CardTitle className="text-sm sm:text-xl font-semibold text-gray-800 flex-1 text-center">
-            Client Onboarding
-          </CardTitle>
-          <div className="w-20" />
-        </div>
-      </CardHeader>
-
-      <CardContent className="pt-8">
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {["clientName", "industryType", "contactEmail", "contactNo", "contactPersonName", "website", "address"].map((name) => {
-            const labelMap = {
-              clientName: "Client Name",
-              industryType: "Industry Type",
-              contactEmail: "Email",
-              contactNo: "Contact Number",
-              contactPersonName: "Contact Person",
-              website: "Website (optional)",
-              address: "Address",
-            };
-            return (
-              <div key={name} className="flex flex-col w-full">
-                <Label htmlFor={name}>{labelMap[name]}</Label>
-                {name === "address" ? (
-                  <Textarea id={name} name={name} value={formData[name] || ""} onChange={handleChange} className="mt-1" />
-                ) : name === "industryType" ? (
-                  <Select value={formData[name] || ""} onValueChange={(val) => dispatch(updateFormData({ [name]: val }))}>
-                    <SelectTrigger className="mt-1 w-full">
-                      <SelectValue placeholder="Select Industry" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {industries.map((ind) => (
-                        <SelectItem key={ind._id} value={ind.Industryname}>{ind.Industryname}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input id={name} name={name} type="text" value={formData[name] || ""} onChange={handleChange} className="mt-1" />
-                )}
-                {errors[name] && <p className="text-sm text-red-500 mt-1">{errors[name]}</p>}
-              </div>
-            );
-          })}
-
-          <div className="sm:col-span-2">
-            <Label>Onboarding Date</Label>
-            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="justify-start text-left font-normal mt-1 w-full">
-                  {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <CalendarComponent
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => {
-                    setCalendarOpen(false);
-                    setSelectedDate(date);
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            {errors.onboardingDate && <p className="text-sm text-red-500 mt-1">{errors.onboardingDate}</p>}
+    <>
+      <div ref={formRef} className="min-h-screen p-6 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-8 text-center sm:text-left">
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Onboard New Client</h1>
+            <p className="mt-2 text-lg text-gray-600">Fill in the details to onboard a new client</p>
           </div>
 
-          <div className="sm:col-span-2">
-            <Label htmlFor="fileData">Upload Documents</Label>
-            <div
-              ref={dropZoneRef}
-              onDragEnter={handleDrag}
-              onDragOver={handleDrag}
-              onDragLeave={handleDrag}
-              onDrop={handleDrop}
-              className={`mt-1 p-5 flex flex-col items-center justify-center text-center gap-2 border-2 border-dashed rounded-md cursor-pointer transition ${dragActive ? "border-gray-600 bg-gray-50" : "border-gray-300 hover:border-gray-500"}`}
-              onClick={() => fileInputRef.current.click()}
-            >
-              <UploadCloud className="w-6 h-6 text-gray-500" />
-              <p className="text-sm text-gray-600">Drag & drop files here or click to upload</p>
-              <Input
-                type="file"
-                name="fileData"
-                id="fileData"
-                ref={fileInputRef}
-                multiple
-                onChange={handleChange}
-                className="hidden"
-              />
-              {Array.isArray(formData.fileData) && formData.fileData.length > 0 && (
-                <div className="mt-4 w-full flex flex-col gap-2">
-                  {formData.fileData.map((file, idx) => (
-                    <div key={idx} className="flex items-center justify-between px-3 py-2 rounded border border-gray-200 bg-gray-50">
-                      <div className="flex items-center gap-2 truncate text-sm text-gray-700">
-                        {getFileIcon(file.type)} <span className="truncate">{file.name}</span>
-                      </div>
-                      <Button variant="ghost" className="text-red-500 hover:text-red-700 px-2 py-0" onClick={() => dispatch(removeFile(idx))}>
-                        <X className="h-4 w-4" />
-                      </Button>
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* LEFT */}
+              <div className="space-y-6">
+                {/* Client Name */}
+                <div className="space-y-1">
+                  <Label className="font-semibold">
+                    Client Name <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    name="clientName"
+                    value={formData.clientName}
+                    onChange={handleChange}
+                    placeholder="Acme Corp"
+                    className="h-12"
+                  />
+                  {errors.clientName && <p className="text-red-500 text-sm">{errors.clientName}</p>}
+                </div>
+
+                {/* Industry */}
+                <div ref={industryRef} className="space-y-1 relative">
+                  <Label className="font-semibold">
+                    Industry Type <span className="text-red-500">*</span>
+                  </Label>
+                  <div
+                    onClick={() => setIsIndustryOpen(!isIndustryOpen)}
+                    className="h-12 px-4 flex items-center justify-between bg-white border rounded-lg cursor-pointer hover:border-gray-400 w-full"
+                  >
+                    <span className="truncate">{formData.industryType || "Select Industry"}</span>
+                    <svg
+                      className={`w-5 h-5 transition ${isIndustryOpen ? "rotate-180" : ""}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                  {isIndustryOpen && (
+                    <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl border max-h-64 overflow-y-auto">
+                      {industries.map((ind) => (
+                        <div
+                          key={ind._id}
+                          onClick={() => handleIndustrySelect(ind.Industryname)}
+                          className="px-4 py-3 hover:bg-gray-100 cursor-pointer"
+                        >
+                          {ind.Industryname}
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
+                  {errors.industryType && <p className="text-red-500 text-sm mt-1">{errors.industryType}</p>}
+                </div>
+
+                {/* Contact Person */}
+                <div className="space-y-1">
+                  <Label className="font-semibold">
+                    Contact Person <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    name="contactPersonName"
+                    value={formData.contactPersonName}
+                    onChange={handleChange}
+                    placeholder="John Doe"
+                    className="h-12"
+                  />
+                  {errors.contactPersonName && <p className="text-red-500 text-sm">{errors.contactPersonName}</p>}
+                </div>
+
+                {/* Email */}
+                <div className="space-y-1">
+                  <Label className="font-semibold">
+                    Email <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    name="contactEmail"
+                    type="email"
+                    value={formData.contactEmail}
+                    onChange={handleChange}
+                    placeholder="john@acme.com"
+                    className="h-12"
+                  />
+                  {errors.contactEmail && <p className="text-red-500 text-sm">{errors.contactEmail}</p>}
+                </div>
+
+                {/* Phone + Country */}
+                <div ref={countryRef} className="space-y-1 relative">
+                  <Label className="font-semibold">
+                    Phone Number <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="flex h-12">
+                    <div
+                      onClick={() => setIsCountryOpen((prev) => !prev)}
+                      className="h-full px-4 flex items-center gap-2 bg-white border rounded-l-lg cursor-pointer hover:bg-gray-50 whitespace-nowrap min-w-24 justify-center"
+                    >
+                      <span className="text-sm font-medium">{selectedCountry.code}</span>
+                      <svg
+                        className={`w-4 h-4 transition ${isCountryOpen ? "rotate-180" : ""}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                    <Input
+                      value={phoneInput}
+                      onChange={handlePhoneChange}
+                      placeholder="63700 73215"
+                      className="rounded-l-none h-full font-mono"
+                      maxLength="10"
+                    />
+                  </div>
+                  {errors.contactNo && <p className="text-red-500 text-sm mt-1">{errors.contactNo}</p>}
+
+                  {isCountryOpen && (
+                    <div className="absolute z-50 top-full left-0 mt-2 w-full bg-white rounded-lg shadow-2xl border border-gray-200 max-h-64 overflow-y-auto">
+                      {countries.map((c) => (
+                        <div
+                          key={c.code}
+                          onClick={() => handleCountrySelect(c)}
+                          className="px-4 py-3 hover:bg-blue-50 cursor-pointer flex items-center justify-between border-b border-gray-100 last:border-0 transition"
+                        >
+                          <span className="font-medium">{c.name}</span>
+                          <span className="text-gray-600 font-mono text-sm">{c.code}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Website */}
+                <div className="space-y-1">
+                  <Label className="font-semibold">Website (optional)</Label>
+                  <div className="flex h-12">
+                    <span className="inline-flex items-center px-4 bg-gray-100 border border-r-0 rounded-l-lg">
+                      <FiGlobe className="w-5 h-5 text-gray-600" />
+                    </span>
+                    <Input
+                      name="website"
+                      value={(formData.website || "").replace(/^https?:\/\//i, "")}
+                      onChange={handleChange}
+                      placeholder="acme.com"
+                      className="rounded-l-none h-full"
+                    />
+                  </div>
+                  {errors.website && <p className="text-red-500 text-sm mt-1">{errors.website}</p>}
+                </div>
+
+                {/* Address */}
+                <div className="space-y-1">
+                  <Label className="font-semibold">
+                    Address <span className="text-red-500">*</span>
+                  </Label>
+                  <Textarea
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    rows={4}
+                    placeholder="123 Business St, Mumbai"
+                  />
+                  {errors.address && <p className="text-red-500 text-sm">{errors.address}</p>}
+                </div>
+              </div>
+
+              {/* RIGHT - UPLOAD */}
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <Label className="font-semibold">Client Documents</Label>
+                  <div
+                    className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition ${
+                      dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-50"
+                    }`}
+                    onDragEnter={handleDrag}
+                    onDragOver={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      onChange={(e) => e.target.files && handleFiles(e.target.files)}
+                      className="hidden"
+                    />
+                    <FiUpload className="mx-auto h-12 w-12 text-gray-400" />
+                    <p className="mt-3">Drag & drop or click</p>
+                    <p className="text-sm text-gray-500">Max 5MB</p>
+                  </div>
+
+                  {formData.fileData.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="font-medium">{formData.fileData.length} file(s)</p>
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {formData.fileData.map((file, i) => (
+                          <div
+                            key={i}
+                            className="bg-white border rounded-lg p-4 flex items-center justify-between group hover:shadow-md"
+                          >
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              {getFileIcon(file.type)}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">{file.name}</p>
+                                <p className="text-xs text-gray-500">
+                                  {(file.size / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                              </div>
+                            </div>
+                            {uploadProgress[file.name] !== undefined ? (
+                              <Progress value={uploadProgress[file.name]} className="w-24 h-2" />
+                            ) : (
+                              <div className="flex gap-2">
+                                <Button type="button" variant="ghost" size="icon" onClick={() => viewFile(file)}>
+                                  <FiEye className="h-4 w-4" />
+                                </Button>
+                                <Button type="button" variant="ghost" size="icon" onClick={() => removeFile(i)}>
+                                  <FiX className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* SUBMIT BUTTON */}
+            <div className="flex justify-end pt-8">
+              <Button
+                type="submit"
+                size="lg"
+                disabled={!isFormFilled() || isSubmitting}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-12 py-6 text-lg rounded-xl shadow-lg disabled:opacity-50 min-w-64 flex items-center gap-3"
+              >
+                {isSubmitting ? (
+                  <>Onboarding...</>
+                ) : (
+                  <>
+                    <FiCheck className="h-6 w-6" />
+                    Onboard Client
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {/* Preview Modal */}
+      {previewFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={closePreview}>
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-full overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center p-6 border-b">
+              <h3 className="text-xl font-bold truncate pr-4">{previewFile.name}</h3>
+              <Button variant="ghost" size="icon" onClick={closePreview}>
+                <FiX className="h-6 w-6" />
+              </Button>
+            </div>
+            <div className="flex-1 p-6 bg-gray-100">
+              {previewFile.type === "application/pdf" ? (
+                <iframe src={previewFile.url} className="w-full h-full min-h-96 rounded-lg border" />
+              ) : (
+                <div className="bg-white border-2 border-dashed rounded-xl w-full h-96 flex flex-col items-center justify-center">
+                  <FiFileText className="h-16 w-16 text-gray-400 mb-4" />
+                  <p className="text-gray-600">Preview not available</p>
                 </div>
               )}
             </div>
-            {errors.fileData && <p className="text-sm text-red-500 mt-1">{errors.fileData}</p>}
           </div>
-
-          <div className="sm:col-span-2 flex justify-center mt-6">
-            <Button
-              type="submit"
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-lg"
-              disabled={addLoading || industriesLoading}
-            >
-              {addLoading ? "Submitting..." : "Onboard Client"}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+        </div>
+      )}
+    </>
   );
 }
-
-

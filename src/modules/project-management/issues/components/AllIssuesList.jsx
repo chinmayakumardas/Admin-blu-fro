@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchAllBugs } from "@/features/bugSlice";
+import { fetchAllBugs } from "@/modules/project-management/issues/slices/bugSlice";
 import {
   Bug as BugIcon,
   Loader2,
@@ -46,7 +46,7 @@ import {
 import { FiX } from "react-icons/fi";
 // import IssueDetailsViewModal from "@/modules/bug/IssueDetailsViewModal";
 import { formatDateTimeIST } from "@/utils/formatDate";
-import BugDetailsViewModal from "@/modules/bug/BugDetailsViewModal";
+import BugDetailsViewModal from "@/modules/project-management/issues/components/bug/BugDetailsViewModal";
 
 // Status and priority styling
 const statusColors = {
